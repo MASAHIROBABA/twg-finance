@@ -1,0 +1,2802 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>グループ財務管理システム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f11;
+  --bg2: #161819;
+  --bg3: #1e2022;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0f0ee;
+  --muted: #7a7d82;
+  --muted2: #4a4d52;
+  --accent: #c8f060;
+  --accent2: #a8d040;
+  --in: #4ade80;
+  --out: #f87171;
+  --techno: #60a5fa;
+  --bushi: #fb923c;
+  --mira: #a78bfa;
+  --kojin: #94a3b8;
+  --font-mono: 'DM Mono', monospace;
+  --font-jp: 'Noto Sans JP', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-jp); font-size: 14px; }
+
+/* Layout */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; }
+.main { flex: 1; overflow-y: auto; }
+
+/* Sidebar */
+.logo { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 11px; font-family: var(--font-mono); color: var(--accent); letter-spacing: 0.15em; font-weight: 500; }
+.logo-sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--font-mono); }
+.nav-section { padding: 16px 12px 8px; }
+.nav-label { font-size: 9px; color: var(--muted2); letter-spacing: 0.2em; font-family: var(--font-mono); padding: 0 8px; margin-bottom: 6px; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: none; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; font-family: var(--font-jp); font-size: 13px; text-align: left; transition: all 0.15s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: rgba(200,240,96,0.1); color: var(--accent); }
+.nav-btn .icon { width: 16px; font-size: 16px; flex-shrink: 0; }
+.nav-btn .badge { margin-left: auto; background: var(--bg3); color: var(--muted); font-size: 10px; font-family: var(--font-mono); padding: 1px 6px; border-radius: 10px; }
+.sidebar-bottom { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+.company-dots { display: flex; flex-direction: column; gap: 6px; }
+.company-dot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* Header */
+.page-header { padding: 24px 28px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+.page-title { font-size: 18px; font-weight: 500; }
+.page-date { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.btn { padding: 7px 14px; border-radius: 6px; font-family: var(--font-jp); font-size: 13px; cursor: pointer; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); transition: all 0.15s; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-accent { background: var(--accent); color: #0e0f11; border-color: var(--accent); font-weight: 500; }
+.btn-accent:hover { background: var(--accent2); color: #0e0f11; border-color: var(--accent2); }
+
+/* Content */
+.content { padding: 24px 28px; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Metric grid */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.metric-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; font-family: var(--font-mono); margin-bottom: 8px; }
+.metric-value { font-size: 22px; font-family: var(--font-mono); font-weight: 500; line-height: 1; }
+.metric-sub { font-size: 10px; color: var(--muted); margin-top: 6px; font-family: var(--font-mono); }
+.metric.accent { border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
+.metric.accent .metric-value { color: var(--accent); }
+.v-pos { color: var(--in); }
+.v-neg { color: var(--out); }
+
+/* Cards */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.card-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.card-title { font-size: 11px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.1em; }
+.card-body { padding: 0; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { padding: 10px 16px; font-size: 10px; color: var(--muted); font-family: var(--font-mono); font-weight: 500; text-align: left; border-bottom: 1px solid var(--border); letter-spacing: 0.08em; white-space: nowrap; }
+.data-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.data-table .num { font-family: var(--font-mono); text-align: right; }
+.data-table .total td { background: rgba(255,255,255,0.03); font-weight: 500; }
+
+/* Tags */
+.tag { display: inline-block; font-size: 10px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.tag-techno { background: rgba(96,165,250,0.15); color: var(--techno); }
+.tag-bushi { background: rgba(251,146,60,0.15); color: var(--bushi); }
+.tag-mira { background: rgba(167,139,250,0.15); color: var(--mira); }
+.tag-kojin { background: rgba(148,163,184,0.15); color: var(--kojin); }
+.tag-in { background: rgba(74,222,128,0.12); color: var(--in); }
+.tag-out { background: rgba(248,113,113,0.12); color: var(--out); }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 10px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.08em; }
+.form-control { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: var(--font-jp); font-size: 13px; padding: 8px 10px; outline: none; transition: border-color 0.15s; width: 100%; }
+.form-control:focus { border-color: var(--accent); }
+select.form-control { cursor: pointer; }
+.form-actions { margin-top: 18px; display: flex; gap: 10px; }
+
+/* PL Table */
+.pl-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.pl-row:last-child { border-bottom: none; }
+.pl-row.indent { padding-left: 36px; }
+.pl-row.indent2 { padding-left: 54px; }
+.pl-row.subtotal { background: rgba(255,255,255,0.03); }
+.pl-row.total { background: rgba(200,240,96,0.06); border-color: rgba(200,240,96,0.15); }
+.pl-row .pl-label { color: var(--muted); font-size: 13px; }
+.pl-row.subtotal .pl-label, .pl-row.total .pl-label { color: var(--text); font-weight: 500; }
+.pl-row .pl-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+
+/* Chart bar inline */
+.bar-wrap { display: flex; align-items: center; gap: 8px; }
+.bar-bg { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.bar-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 60px; text-align: right; }
+
+/* Month selector */
+.month-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.month-tab { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-family: var(--font-mono); font-size: 11px; transition: all 0.15s; }
+.month-tab:hover { border-color: var(--border2); color: var(--text); }
+.month-tab.active { background: var(--accent); color: #0e0f11; border-color: var(--accent); font-weight: 500; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--accent); color: var(--accent); padding: 12px 20px; border-radius: 8px; font-family: var(--font-mono); font-size: 12px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* Empty state */
+.empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+/* Drop zone */
+.drop-zone { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg3); }
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+.drop-zone-icon { font-size: 32px; margin-bottom: 12px; }
+.drop-zone-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.drop-zone-sub { font-size: 12px; color: var(--muted); }
+.bank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.bank-card { background: var(--bg3); border: 1.5px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; text-align: center; }
+.bank-card:hover { border-color: var(--accent); }
+.bank-card.selected { border-color: var(--accent); background: rgba(200,240,96,0.07); }
+.bank-card .bank-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.bank-card .bank-fmt { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+.preview-table-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; }
+.step-bar { display: flex; gap: 0; margin-bottom: 24px; }
+.step { flex: 1; padding: 8px 0; text-align: center; font-size: 11px; font-family: var(--font-mono); color: var(--muted); border-bottom: 2px solid var(--border); }
+.step.active { color: var(--accent); border-bottom-color: var(--accent); }
+.step.done { color: var(--in); border-bottom-color: var(--in); }
+/* Account edit */
+.acc-row { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.acc-row:last-child { border-bottom: none; }
+.acc-name { flex: 1; font-size: 13px; }
+.acc-bal-input { width: 120px; font-family: var(--font-mono); font-size: 13px; text-align: right; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 5px 10px; }
+.acc-bal-input:focus { outline: none; border-color: var(--accent); }
+/* Inventory */
+.inv-status { display: inline-block; font-size: 10px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.inv-holding { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.inv-sold { background: rgba(74,222,128,0.12); color: #4ade80; }
+.inv-loss { background: rgba(248,113,113,0.12); color: #f87171; }
+.kind-tag { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 4px; }
+.kind-art { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.kind-car { background: rgba(251,146,60,0.15); color: #fb923c; }
+.kind-other { background: rgba(148,163,184,0.15); color: #94a3b8; }
+/* PLBS */
+.plbs-section { margin-bottom: 20px; }
+.plbs-head { font-size: 11px; font-family: var(--font-mono); color: var(--accent); letter-spacing: 0.12em; padding: 10px 18px 6px; border-bottom: 1px solid rgba(200,240,96,0.15); margin-bottom: 4px; }
+.plbs-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 18px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.plbs-row:last-child { border-bottom: none; }
+.plbs-row.indent { padding-left: 32px; color: var(--muted); font-size: 12px; }
+.plbs-row.subtotal { background: rgba(255,255,255,0.025); font-weight: 500; }
+.plbs-row.total { background: rgba(200,240,96,0.06); font-weight: 500; border-top: 1px solid rgba(200,240,96,0.2); }
+.plbs-val { font-family: var(--font-mono); font-weight: 500; }
+.upload-area { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; background: var(--bg3); transition: all 0.2s; margin-bottom: 16px; }
+.upload-area:hover { border-color: var(--accent); background: rgba(200,240,96,0.04); }
+.period-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: var(--font-mono); background: rgba(200,240,96,0.12); color: var(--accent); margin-bottom: 16px; }
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filter-bar input, .filter-bar select { font-size: 13px; padding: 6px 10px; }
+/* PDF Reader */
+.pdf-drop { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 40px 24px; text-align: center; cursor: pointer; background: var(--bg3); transition: all 0.2s; }
+.pdf-drop:hover, .pdf-drop.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.04); }
+.pdf-result-card { background: rgba(200,240,96,0.05); border: 1px solid rgba(200,240,96,0.2); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.pdf-field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.pdf-field-label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); width: 100px; flex-shrink: 0; }
+.ai-badge { font-size: 10px; background: rgba(200,240,96,0.15); color: var(--accent); padding: 2px 8px; border-radius: 20px; font-family: var(--font-mono); }
+.analyzing { display: flex; align-items: center; gap: 12px; padding: 24px; color: var(--muted); }
+.spin { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Summary mini bars for accounts */
+.account-list { padding: 4px 0; }
+.account-row { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.account-row:last-child { border-bottom: none; }
+.account-name { width: 180px; font-size: 13px; color: var(--text); flex-shrink: 0; }
+.account-company { width: 70px; flex-shrink: 0; }
+.account-bar-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
+.account-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; min-width: 80px; text-align: right; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .page-header { padding: 16px; }
+  .content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-title">GROUP FINANCE</div>
+    <div class="logo-sub">TechnoWealthGroup</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">MAIN</div>
+    <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="icon">◈</span> ダッシュボード
+    </button>
+    <button class="nav-btn" data-page="entry" onclick="navigate('entry')">
+      <span class="icon">＋</span> 取引入力
+    </button>
+    <button class="nav-btn" data-page="cf" onclick="navigate('cf')">
+      <span class="icon">≋</span> キャッシュフロー
+      <span class="badge" id="cf-count">0</span>
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">REPORTS</div>
+    <button class="nav-btn" data-page="pl" onclick="navigate('pl')">
+      <span class="icon">▤</span> PL（損益）
+    </button>
+    <button class="nav-btn" data-page="bs" onclick="navigate('bs')">
+      <span class="icon">◫</span> BS（貸借対照）
+    </button>
+    <button class="nav-btn" data-page="plbs" onclick="navigate('plbs')">
+      <span class="icon">◉</span> 簡易決算書
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">在庫</div>
+    <button class="nav-btn" data-page="inventory" onclick="navigate('inventory')">
+      <span class="icon">▦</span> 在庫一覧
+      <span class="badge" id="inv-count">0</span>
+    </button>
+    <button class="nav-btn" data-page="inv-entry" onclick="navigate('inv-entry')">
+      <span class="icon">＋</span> 在庫入力
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">TOOLS</div>
+    <button class="nav-btn" data-page="pdf-reader" onclick="navigate('pdf-reader')">
+      <span class="icon">📄</span> PDF読取
+    </button>
+    <button class="nav-btn" data-page="import" onclick="navigate('import')">
+      <span class="icon">⬆</span> CSV取込
+    </button>
+    <button class="nav-btn" data-page="accounts" onclick="navigate('accounts')">
+      <span class="icon">⊟</span> 口座管理
+    </button>
+  </div>
+  <div class="sidebar-bottom">
+    <div style="margin-bottom:12px;">
+      <button onclick="openSyncModal()" style="width:100%; background:rgba(200,240,96,0.1); border:1px solid rgba(200,240,96,0.3); border-radius:6px; color:var(--accent); padding:7px 10px; font-family:var(--font-jp); font-size:12px; cursor:pointer; display:flex; align-items:center; gap:8px;">
+        <span id="sync-dot" style="width:7px; height:7px; border-radius:50%; background:var(--muted2); flex-shrink:0;"></span>
+        <span id="sync-label">☁ クラウド同期</span>
+      </button>
+      <div id="sync-last" style="font-size:10px; color:var(--muted2); font-family:var(--font-mono); text-align:center; margin-top:4px;"></div>
+    </div>
+    <div class="company-dots">
+      <div class="company-dot"><div class="dot" style="background:var(--techno)"></div>TechnoWealthGroup</div>
+      <div class="company-dot"><div class="dot" style="background:var(--bushi)"></div>BushidoWorks</div>
+      <div class="company-dot"><div class="dot" style="background:var(--mira)"></div>miracolo</div>
+      <div class="company-dot"><div class="dot" style="background:var(--kojin)"></div>個人</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="pane-dashboard" class="tab-pane active">
+    <div class="page-header">
+      <div>
+        <div class="page-title">ダッシュボード</div>
+        <div class="page-date" id="today-label"></div>
+      </div>
+      <button class="btn btn-accent" onclick="navigate('entry')">＋ 取引入力</button>
+    </div>
+    <div class="content">
+      <div class="metrics" id="dash-metrics"></div>
+
+      <!-- 口座残高 -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">口座別残高</span>
+          <span style="font-family:var(--font-mono); font-size:10px; color:var(--muted)" id="last-update-label"></span>
+        </div>
+        <div class="card-body account-list" id="account-list"></div>
+      </div>
+
+      <!-- 直近取引 -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">直近の取引</span>
+          <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="navigate('cf')">すべて見る →</button>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table class="data-table" id="recent-table">
+            <thead><tr>
+              <th>日付</th><th>会社</th><th>口座</th><th>科目</th><th>区分</th><th style="text-align:right">金額 (万円)</th><th>メモ</th>
+            </tr></thead>
+            <tbody id="recent-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ENTRY ===== -->
+  <div id="pane-entry" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">取引入力</div><div class="page-date">毎日のCFを記録</div></div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <div class="card-head"><span class="card-title">新規取引</span></div>
+        <div class="card-body" style="padding:20px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">日付</label>
+              <input type="date" class="form-control" id="e-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">会社</label>
+              <select class="form-control" id="e-company">
+                <option value="techno">TechnoWealthGroup</option>
+                <option value="bushi">BushidoWorks</option>
+                <option value="mira">miracolo</option>
+                <option value="kojin">個人</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">口座</label>
+              <select class="form-control" id="e-account">
+                <option>住信SBI（Techno）</option>
+                <option>みずほ（Techno）</option>
+                <option>楽天証券（Techno）</option>
+                <option>OKJ（Techno）</option>
+                <option>住信SBI（Bushi）</option>
+                <option>住信SBI（miracolo）</option>
+                <option>個人現預金</option>
+                <option>AMEX法人</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">区分</label>
+              <select class="form-control" id="e-type">
+                <option value="in">IN（入金）</option>
+                <option value="out">OUT（出金）</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">金額（万円）</label>
+              <input type="number" class="form-control" id="e-amount" placeholder="0" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">科目カテゴリ</label>
+              <select class="form-control" id="e-category">
+                <option value="sales_car">売上 — 車両</option>
+                <option value="sales_art">売上 — アート</option>
+                <option value="sales_consulting">売上 — コンサルティング</option>
+                <option value="sales_other">売上 — その他</option>
+                <option value="cogs">仕入・原価</option>
+                <option value="opex">販管費・経費</option>
+                <option value="borrow">借入</option>
+                <option value="repay">返済</option>
+                <option value="inter">グループ内移動</option>
+                <option value="invest">投資・証券</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">メモ</label>
+              <input type="text" class="form-control" id="e-memo" placeholder="例：フェラーリ296GTS売却、マクラーレン頭金、etc.">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-accent" onclick="saveEntry()">登録する</button>
+            <button class="btn" onclick="clearForm()">クリア</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 今日の入力済み -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">本日の入力済み取引</span>
+          <span id="today-entry-count" style="font-family:var(--font-mono); font-size:10px; color:var(--muted)"></span>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr>
+              <th>会社</th><th>口座</th><th>科目</th><th>区分</th><th style="text-align:right">金額</th><th>メモ</th><th></th>
+            </tr></thead>
+            <tbody id="today-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CF ===== -->
+  <div id="pane-cf" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">キャッシュフロー一覧</div></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="form-control" id="cf-search" placeholder="検索..." style="width:180px; padding:6px 10px;" oninput="renderCF()">
+        <select class="form-control" id="cf-filter-company" style="width:auto;" onchange="renderCF()">
+          <option value="">全会社</option>
+          <option value="techno">Techno</option>
+          <option value="bushi">Bushi</option>
+          <option value="mira">miracolo</option>
+          <option value="kojin">個人</option>
+        </select>
+        <select class="form-control" id="cf-filter-type" style="width:auto;" onchange="renderCF()">
+          <option value="">全区分</option>
+          <option value="in">IN</option>
+          <option value="out">OUT</option>
+        </select>
+      </div>
+    </div>
+    <div class="content">
+      <div class="metrics" id="cf-metrics"></div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">取引明細</span>
+          <span id="cf-total-count" style="font-family:var(--font-mono); font-size:10px; color:var(--muted)"></span>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr>
+              <th>日付</th><th>会社</th><th>口座</th><th>科目</th><th>区分</th><th style="text-align:right">金額 (万円)</th><th>メモ</th><th></th>
+            </tr></thead>
+            <tbody id="cf-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PL ===== -->
+  <div id="pane-pl" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">損益計算書 (PL)</div><div class="page-date">月別自動集計</div></div>
+    </div>
+    <div class="content">
+      <div class="month-tabs" id="pl-month-tabs"></div>
+      <div class="metrics" id="pl-metrics"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="card">
+          <div class="card-head"><span class="card-title">損益計算書</span></div>
+          <div class="card-body" id="pl-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">売上内訳（科目別）</span></div>
+          <div class="card-body" id="pl-breakdown"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">会社別PL比較</span></div>
+        <div class="card-body" id="pl-company"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BS ===== -->
+  <div id="pane-bs" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">貸借対照表 (BS)</div><div class="page-date">最新残高ベース</div></div>
+    </div>
+    <div class="content">
+      <div class="metrics" id="bs-metrics"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="card">
+          <div class="card-head"><span class="card-title">資産の部</span></div>
+          <div class="card-body" id="bs-assets"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">負債・純資産の部</span></div>
+          <div class="card-body" id="bs-liabilities"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">資産構成バー</span></div>
+        <div class="card-body" style="padding:16px 18px;" id="bs-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== IMPORT ===== -->
+  <div id="pane-import" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">CSV取込</div><div class="page-date">銀行・証券のCSVを自動解析</div></div>
+    </div>
+    <div class="content">
+      <div class="step-bar">
+        <div class="step active" id="step1-label">① 銀行を選ぶ</div>
+        <div class="step" id="step2-label">② CSVを読み込む</div>
+        <div class="step" id="step3-label">③ 確認・取込</div>
+      </div>
+
+      <!-- Step 1: 銀行選択 -->
+      <div id="import-step1">
+        <div class="card">
+          <div class="card-head"><span class="card-title">銀行・証券を選択</span></div>
+          <div class="card-body" style="padding:16px;">
+            <div class="bank-grid">
+              <div class="bank-card selected" id="bank-shinsei" onclick="selectBank('shinsei')">
+                <div class="bank-name">住信SBIネット銀行</div>
+                <div class="bank-fmt">入出金明細CSV</div>
+              </div>
+              <div class="bank-card" id="bank-mizuho" onclick="selectBank('mizuho')">
+                <div class="bank-name">みずほ銀行</div>
+                <div class="bank-fmt">取引明細CSV</div>
+              </div>
+              <div class="bank-card" id="bank-rakuten" onclick="selectBank('rakuten')">
+                <div class="bank-name">楽天証券</div>
+                <div class="bank-fmt">取引履歴CSV</div>
+              </div>
+              <div class="bank-card" id="bank-rakutenbank" onclick="selectBank('rakutenbank')">
+                <div class="bank-name">楽天銀行</div>
+                <div class="bank-fmt">入出金明細CSV</div>
+              </div>
+              <div class="bank-card" id="bank-generic" onclick="selectBank('generic')">
+                <div class="bank-name">その他（汎用）</div>
+                <div class="bank-fmt">日付/金額/摘要</div>
+              </div>
+            </div>
+            <div style="background:var(--bg3); border-radius:8px; padding:14px; font-size:12px; color:var(--muted); font-family:var(--font-mono); line-height:1.8;" id="bank-format-hint">
+              <strong style="color:var(--text);">住信SBIネット銀行</strong> のCSVフォーマット<br>
+              取引日, 内容, 出金金額(円), 入金金額(円), 残高(円)<br>
+              ネットバンキング → 入出金明細 → CSV出力
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-accent" onclick="goStep(2)">次へ →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: ファイル読み込み -->
+      <div id="import-step2" style="display:none;">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">CSVファイルを選択</span>
+            <span id="selected-bank-label" style="font-family:var(--font-mono); font-size:10px; color:var(--accent);"></span>
+          </div>
+          <div class="card-body" style="padding:16px;">
+            <div class="form-grid" style="margin-bottom:16px;">
+              <div class="form-group">
+                <label class="form-label">対象会社</label>
+                <select class="form-control" id="import-company">
+                  <option value="techno">TechnoWealthGroup</option>
+                  <option value="bushi">BushidoWorks</option>
+                  <option value="mira">miracolo</option>
+                  <option value="kojin">個人</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">対象口座</label>
+                <select class="form-control" id="import-account">
+                  <option>住信SBI（Techno）</option>
+                  <option>みずほ（Techno）</option>
+                  <option>楽天証券（Techno）</option>
+                  <option>OKJ（Techno）</option>
+                  <option>住信SBI（Bushi）</option>
+                  <option>住信SBI（miracolo）</option>
+                  <option>個人現預金</option>
+                  <option>その他</option>
+                </select>
+              </div>
+            </div>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+              <div class="drop-zone-icon">⬆</div>
+              <div class="drop-zone-title">CSVファイルをドロップ</div>
+              <div class="drop-zone-sub">またはクリックしてファイルを選択</div>
+            </div>
+            <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="onFileSelect(event)">
+            <div id="file-status" style="margin-top:10px; font-family:var(--font-mono); font-size:11px; color:var(--muted);"></div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <button class="btn" onclick="goStep(1)">← 戻る</button>
+          <button class="btn btn-accent" id="step2-next" onclick="goStep(3)" disabled style="opacity:0.4;">次へ →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: プレビュー・取込 -->
+      <div id="import-step3" style="display:none;">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">取込プレビュー</span>
+            <span id="preview-count" style="font-family:var(--font-mono); font-size:10px; color:var(--muted);"></span>
+          </div>
+          <div class="card-body preview-table-wrap">
+            <table class="data-table" id="preview-table">
+              <thead><tr>
+                <th><input type="checkbox" id="chk-all" onchange="toggleAll(this.checked)" checked></th>
+                <th>日付</th><th>摘要</th><th>区分</th><th style="text-align:right">金額 (万円)</th><th>科目（変更可）</th><th>重複</th>
+              </tr></thead>
+              <tbody id="preview-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div style="background:var(--bg3); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:12px; color:var(--muted); display:flex; gap:24px;">
+          <span>✓ 取込対象: <strong id="import-count-selected" style="color:var(--in);">0</strong> 件</span>
+          <span>⚠ 重複スキップ: <strong id="import-count-dup" style="color:var(--out);">0</strong> 件</span>
+          <span>合計: <strong id="import-total" style="color:var(--text);">0</strong> 万円</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <button class="btn" onclick="goStep(2)">← 戻る</button>
+          <button class="btn btn-accent" onclick="executeImport()">⬆ 取込実行</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ACCOUNTS ===== -->
+  <div id="pane-accounts" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">口座管理</div><div class="page-date">基準残高を手動設定</div></div>
+      <button class="btn btn-accent" onclick="saveAccountBalances()">保存する</button>
+    </div>
+    <div class="content">
+      <div style="background:rgba(200,240,96,0.07); border:1px solid rgba(200,240,96,0.2); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:12px; color:var(--muted); line-height:1.8;">
+        <strong style="color:var(--accent);">使い方：</strong> ネットバンキングで実際の残高を確認し、ここに入力してください。この値を「基準残高」として保存し、以降の取引入力差分で自動計算します。毎月末などに定期的に合わせることで正確な残高を維持できます。
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">口座別 基準残高（万円）</span></div>
+        <div class="card-body" id="accounts-edit-body"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-head"><span class="card-title">口座を追加</span></div>
+        <div class="card-body" style="padding:16px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">口座名</label>
+              <input type="text" class="form-control" id="new-acc-name" placeholder="例: みずほ（Bushi）">
+            </div>
+            <div class="form-group">
+              <label class="form-label">会社</label>
+              <select class="form-control" id="new-acc-company">
+                <option value="techno">TechnoWealthGroup</option>
+                <option value="bushi">BushidoWorks</option>
+                <option value="mira">miracolo</option>
+                <option value="kojin">個人</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">基準残高（万円）</label>
+              <input type="number" class="form-control" id="new-acc-bal" placeholder="0" step="0.01">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-accent" onclick="addAccount()">追加</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INVENTORY ===== -->
+  <div id="pane-inventory" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">在庫一覧</div><div class="page-date">アート・中古車・その他</div></div>
+      <button class="btn btn-accent" onclick="navigate('inv-entry')">＋ 在庫登録</button>
+    </div>
+    <div class="content">
+      <div class="metrics" id="inv-metrics"></div>
+      <div class="filter-bar">
+        <input type="text" class="form-control" id="inv-search" placeholder="商品名・仕入先で検索..." style="flex:1; min-width:180px;" oninput="renderInventory()">
+        <select class="form-control" id="inv-filter-kind" style="width:auto;" onchange="renderInventory()">
+          <option value="">全種別</option>
+          <option value="アート">アート</option>
+          <option value="中古車">中古車</option>
+          <option value="その他">その他</option>
+        </select>
+        <select class="form-control" id="inv-filter-company" style="width:auto;" onchange="renderInventory()">
+          <option value="">全会社</option>
+          <option value="techno">Techno</option>
+          <option value="mira">miracolo</option>
+          <option value="bushi">Bushi</option>
+        </select>
+        <select class="form-control" id="inv-filter-status" style="width:auto;" onchange="renderInventory()">
+          <option value="">全ステータス</option>
+          <option value="holding">在庫中</option>
+          <option value="sold">売却済</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">在庫明細</span>
+          <span id="inv-table-count" style="font-family:var(--font-mono); font-size:10px; color:var(--muted);"></span>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table class="data-table" id="inv-table" style="min-width:900px;">
+            <thead><tr>
+              <th>種別</th><th>会社</th><th>商品名</th><th>仕入先</th>
+              <th>仕入日</th><th style="text-align:right">仕入金額</th>
+              <th>売却先</th><th>売却日</th><th style="text-align:right">売却金額</th>
+              <th style="text-align:right">粗利</th><th style="text-align:right">利益率</th>
+              <th>ステータス</th><th></th>
+            </tr></thead>
+            <tbody id="inv-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INVENTORY ENTRY ===== -->
+  <div id="pane-inv-entry" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">在庫入力</div><div class="page-date">仕入・売却を記録</div></div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <div class="card-head"><span class="card-title">新規在庫登録</span></div>
+        <div class="card-body" style="padding:20px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">会社</label>
+              <select class="form-control" id="inv-e-company">
+                <option value="techno">TechnoWealthGroup</option>
+                <option value="mira">miracolo</option>
+                <option value="bushi">BushidoWorks</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">種別</label>
+              <select class="form-control" id="inv-e-kind">
+                <option>アート</option>
+                <option>中古車</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">商品名</label>
+              <input type="text" class="form-control" id="inv-e-name" placeholder="例: フェラーリ296GTS、Xiaomin Feng Composition...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">仕入先</label>
+              <input type="text" class="form-control" id="inv-e-supplier" placeholder="例: 株式会社アキトス">
+            </div>
+            <div class="form-group">
+              <label class="form-label">仕入日</label>
+              <input type="date" class="form-control" id="inv-e-buy-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">仕入金額（円）</label>
+              <input type="number" class="form-control" id="inv-e-buy-price" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">請求書No.</label>
+              <input type="text" class="form-control" id="inv-e-invoice" placeholder="例: 39">
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border); margin:16px 0; padding-top:16px;">
+            <div style="font-size:11px; color:var(--muted); font-family:var(--font-mono); margin-bottom:12px;">売却情報（売却後に入力）</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">売却先</label>
+                <input type="text" class="form-control" id="inv-e-buyer" placeholder="例: 株式会社autoraise">
+              </div>
+              <div class="form-group">
+                <label class="form-label">売却日</label>
+                <input type="date" class="form-control" id="inv-e-sell-date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">売却金額（円）</label>
+                <input type="number" class="form-control" id="inv-e-sell-price" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">手数料（円）</label>
+                <input type="number" class="form-control" id="inv-e-fee" placeholder="0">
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-accent" onclick="saveInventory()">登録する</button>
+            <button class="btn" onclick="clearInvForm()">クリア</button>
+          </div>
+        </div>
+      </div>
+      <!-- 在庫中リスト -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">在庫中（未売却）</span><span id="holding-count" style="font-family:var(--font-mono); font-size:10px; color:var(--muted);"></span></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table class="data-table" style="min-width:700px;">
+            <thead><tr><th>種別</th><th>会社</th><th>商品名</th><th>仕入日</th><th style="text-align:right">仕入金額</th><th>仕入先</th><th>操作</th></tr></thead>
+            <tbody id="holding-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PLBS (簡易決算書) ===== -->
+  <div id="pane-plbs" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">簡易決算書</div><div class="page-date">複数社・複数期・AI自動読取対応</div></div>
+      <button class="btn btn-accent" onclick="openFsUpload()">📄 決算書PDFを読取</button>
+    </div>
+    <div class="content">
+
+      <!-- 表示切替 -->
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+        <select class="form-control" id="plbs-view" style="width:auto;" onchange="renderPLBS()">
+          <option value="current">進行期（リアルタイム）</option>
+          <option value="history">過去決算書一覧</option>
+          <option value="compare">会社別比較</option>
+        </select>
+        <select class="form-control" id="plbs-co-select" style="width:auto;" onchange="renderPLBS()">
+          <option value="all">全会社</option>
+          <option value="techno">TechnoWealthGroup</option>
+          <option value="bushi">BushidoWorks</option>
+          <option value="mira">miracolo</option>
+        </select>
+        <div id="plbs-badge" class="period-badge" style="font-size:10px;"></div>
+      </div>
+
+      <!-- 進行期 -->
+      <div id="plbs-current-section">
+        <div class="metrics" id="plbs-metrics"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="card"><div class="card-head"><span class="card-title">PL — 進行期（在庫連動）</span></div><div id="plbs-pl-body"></div></div>
+          <div class="card"><div class="card-head"><span class="card-title">BS — 現在時点</span></div><div id="plbs-bs-body"></div></div>
+        </div>
+        <div class="card"><div class="card-head"><span class="card-title">在庫連動サマリー</span></div><div id="plbs-inv-summary"></div></div>
+      </div>
+
+      <!-- 過去決算書一覧 -->
+      <div id="plbs-history-section" style="display:none;">
+        <div id="plbs-history-tabs" class="month-tabs"></div>
+        <div id="plbs-history-content"></div>
+        <!-- 手動入力フォーム -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">決算書を手動入力</span>
+            <span class="ai-badge">または上の「PDF読取」ボタンで自動入力</span>
+          </div>
+          <div class="card-body" style="padding:18px;">
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div class="form-group"><label class="form-label">会社</label><select class="form-control" id="fs-company"><option value="techno">TechnoWealthGroup</option><option value="bushi">BushidoWorks</option><option value="mira">miracolo</option></select></div>
+              <div class="form-group"><label class="form-label">決算期</label><input type="text" class="form-control" id="fs-period" placeholder="例: 2024年8月期"></div>
+              <div class="form-group"><label class="form-label">決算日</label><input type="date" class="form-control" id="fs-date"></div>
+            </div>
+            <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-bottom:10px;">▶ PL（損益計算書）</div>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div class="form-group"><label class="form-label">売上高（円）</label><input type="number" class="form-control" id="fs-sales" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">売上原価（円）</label><input type="number" class="form-control" id="fs-cogs" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">販管費（円）</label><input type="number" class="form-control" id="fs-opex" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">営業外収益（円）</label><input type="number" class="form-control" id="fs-other-in" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">営業外費用（円）</label><input type="number" class="form-control" id="fs-other-out" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">法人税等（円）</label><input type="number" class="form-control" id="fs-tax" placeholder="0"></div>
+            </div>
+            <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-bottom:10px;">▶ BS（貸借対照表）</div>
+            <div class="form-grid" style="margin-bottom:18px;">
+              <div class="form-group"><label class="form-label">現金・預金（円）</label><input type="number" class="form-control" id="fs-cash" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">売掛金（円）</label><input type="number" class="form-control" id="fs-ar" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">棚卸資産（円）</label><input type="number" class="form-control" id="fs-inv" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">固定資産（円）</label><input type="number" class="form-control" id="fs-fixed" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">買掛金（円）</label><input type="number" class="form-control" id="fs-ap" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">借入金（円）</label><input type="number" class="form-control" id="fs-debt" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">資本金（円）</label><input type="number" class="form-control" id="fs-capital" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">繰越利益剰余金（円）</label><input type="number" class="form-control" id="fs-retained" placeholder="0"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-accent" onclick="saveFsEntry()">保存する</button>
+              <button class="btn" onclick="clearFsForm()">クリア</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 会社別比較 -->
+      <div id="plbs-compare-section" style="display:none;">
+        <div id="plbs-compare-content"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PDF決算書読取モーダル -->
+  <div id="fs-upload-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center;">
+    <div style="background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:24px; width:500px; max-width:92vw; max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <div style="font-size:15px; font-weight:500;">📄 決算書PDF 自動読取</div>
+        <button onclick="closeFsUpload()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">✕</button>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="form-label" style="margin-bottom:6px; display:block;">会社を選択</label>
+        <select class="form-control" id="fs-upload-company">
+          <option value="techno">TechnoWealthGroup</option>
+          <option value="bushi">BushidoWorks</option>
+          <option value="mira">miracolo</option>
+        </select>
+      </div>
+      <div class="pdf-drop" id="fs-drop-zone"
+        onclick="document.getElementById('fs-pdf-input').click()"
+        ondragover="pdfDragOver2(event)" ondragleave="pdfDragLeave2(event)" ondrop="pdfDrop2(event)">
+        <div style="font-size:28px; margin-bottom:10px;">📄</div>
+        <div style="font-size:14px; font-weight:500; margin-bottom:6px;">決算書PDFをドロップ</div>
+        <div style="font-size:12px; color:var(--muted);">PL・BSの数値をAIが自動抽出します</div>
+      </div>
+      <input type="file" id="fs-pdf-input" accept=".pdf,image/*" style="display:none" onchange="fsPdfSelect(event)">
+      <div id="fs-analyzing" style="display:none;" class="analyzing">
+        <div class="spin"></div>
+        <span>決算書を解析中です...</span>
+      </div>
+      <div id="fs-upload-result" style="display:none;">
+        <div class="pdf-result-card" style="margin-top:14px;">
+          <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-bottom:8px;">▶ 読み取り結果（確認して修正可）</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">決算期</label><input type="text" class="form-control" id="fs-r-period"></div>
+            <div class="form-group"><label class="form-label">決算日</label><input type="date" class="form-control" id="fs-r-date"></div>
+            <div class="form-group"><label class="form-label">売上高（円）</label><input type="number" class="form-control" id="fs-r-sales"></div>
+            <div class="form-group"><label class="form-label">売上原価（円）</label><input type="number" class="form-control" id="fs-r-cogs"></div>
+            <div class="form-group"><label class="form-label">販管費（円）</label><input type="number" class="form-control" id="fs-r-opex"></div>
+            <div class="form-group"><label class="form-label">法人税等（円）</label><input type="number" class="form-control" id="fs-r-tax"></div>
+            <div class="form-group"><label class="form-label">現金・預金（円）</label><input type="number" class="form-control" id="fs-r-cash"></div>
+            <div class="form-group"><label class="form-label">売掛金（円）</label><input type="number" class="form-control" id="fs-r-ar"></div>
+            <div class="form-group"><label class="form-label">棚卸資産（円）</label><input type="number" class="form-control" id="fs-r-inv"></div>
+            <div class="form-group"><label class="form-label">固定資産（円）</label><input type="number" class="form-control" id="fs-r-fixed"></div>
+            <div class="form-group"><label class="form-label">借入金（円）</label><input type="number" class="form-control" id="fs-r-debt"></div>
+            <div class="form-group"><label class="form-label">資本金（円）</label><input type="number" class="form-control" id="fs-r-capital"></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button class="btn btn-accent" onclick="saveFsFromUpload()" style="flex:1;">この内容で保存する</button>
+          <button class="btn" onclick="resetFsUpload()">別のPDFを読む</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PDF READER ===== -->
+  <div id="pane-pdf-reader" class="tab-pane">
+    <div class="page-header">
+      <div><div class="page-title">📄 PDF読取</div><div class="page-date">請求書・領収書・決算書をAIが自動解析</div></div>
+    </div>
+    <div class="content">
+      <!-- API Key Setting -->
+      <div class="card" id="pdf-apikey-card">
+        <div class="card-head"><span class="card-title">CLAUDE API KEY設定</span><span class="ai-badge">AI powered</span></div>
+        <div class="card-body" style="padding:16px;">
+          <div style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.7;">
+            PDFをAIが自動解析するためにClaude APIキーが必要です。キーはこのブラウザのみに保存されます。
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="password" id="pdf-api-key" class="form-control" placeholder="sk-ant-api03-..." style="flex:1; font-family:var(--font-mono); font-size:12px;">
+            <button class="btn btn-accent" onclick="savePdfApiKey()">保存</button>
+          </div>
+          <div id="pdf-key-status" style="font-size:11px; margin-top:8px; font-family:var(--font-mono);"></div>
+        </div>
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">PDFをアップロード</span></div>
+        <div class="card-body" style="padding:16px;">
+          <div class="pdf-drop" id="pdf-drop-zone"
+            onclick="document.getElementById('pdf-file-input').click()"
+            ondragover="pdfDragOver(event)" ondragleave="pdfDragLeave(event)" ondrop="pdfDrop(event)">
+            <div style="font-size:32px; margin-bottom:12px;">📄</div>
+            <div style="font-size:15px; font-weight:500; margin-bottom:6px;">PDFをドロップ</div>
+            <div style="font-size:12px; color:var(--muted);">請求書・領収書・銀行明細・決算書に対応</div>
+          </div>
+          <input type="file" id="pdf-file-input" accept=".pdf,image/*" style="display:none" onchange="pdfFileSelect(event)">
+          <div id="pdf-analyzing" style="display:none;" class="analyzing">
+            <div class="spin"></div>
+            <span>AIが解析中です。しばらくお待ちください...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div id="pdf-result-section" style="display:none;">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">AI解析結果</span>
+            <span class="ai-badge">Claude AI</span>
+          </div>
+          <div class="card-body" style="padding:16px;">
+            <div class="pdf-result-card">
+              <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-bottom:12px;">▶ 読み取り内容</div>
+              <div id="pdf-raw-result" style="font-size:12px; color:var(--muted); line-height:1.8; white-space:pre-wrap;"></div>
+            </div>
+            <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-bottom:12px;">▶ 取引として登録</div>
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label">日付</label><input type="date" id="pdf-e-date"></div>
+              <div class="form-group"><label class="form-label">会社</label><select id="pdf-e-company"><option value="techno">TechnoWealthGroup</option><option value="bushi">BushidoWorks</option><option value="mira">miracolo</option><option value="kojin">個人</option></select></div>
+              <div class="form-group"><label class="form-label">区分</label><select id="pdf-e-type"><option value="in">IN（入金）</option><option value="out">OUT（出金）</option></select></div>
+              <div class="form-group"><label class="form-label">金額（万円）</label><input type="number" id="pdf-e-amount" placeholder="0" step="0.01"></div>
+              <div class="form-group"><label class="form-label">科目</label><select id="pdf-e-category"><option value="sales_car">売上—車両</option><option value="sales_art">売上—アート</option><option value="sales_consulting">売上—コンサルティング</option><option value="sales_other">売上—その他</option><option value="cogs">仕入・原価</option><option value="opex">販管費</option><option value="borrow">借入</option><option value="repay">返済</option><option value="other">その他</option></select></div>
+              <div class="form-group"><label class="form-label">口座</label><select id="pdf-e-account"><option>住信SBI（Techno）</option><option>みずほ（Techno）</option><option>住信SBI（Bushi）</option><option>住信SBI（miracolo）</option><option>個人現預金</option></select></div>
+              <div class="form-group full"><label class="form-label">メモ（取引先・内容）</label><input type="text" id="pdf-e-memo"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-accent" onclick="registerPdfTx()">取引として登録する</button>
+              <button class="btn" onclick="resetPdfReader()">別のPDFを読む</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3); border:0.5px solid var(--border); border-radius:8px; padding:14px 16px; font-size:12px; color:var(--muted); line-height:1.8;">
+        <strong style="color:var(--text);">対応書類：</strong>
+        請求書・領収書・銀行振込明細・クレジットカード明細・仕入書・売上伝票・決算書（PL/BS）など<br>
+        <strong style="color:var(--text);">読み取り項目：</strong>
+        日付・金額・取引先・品目・消費税・合計金額
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<div id="sync-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:center; justify-content:center;">
+  <div style="background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:24px; width:440px; max-width:90vw;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-size:15px; font-weight:500;">☁ クラウド同期設定</div>
+      <button onclick="closeSyncModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px;">✕</button>
+    </div>
+    <div style="font-size:12px; color:var(--muted); line-height:1.8; margin-bottom:16px;">
+      <strong style="color:var(--accent);">JSONBin.io</strong> を使って複数人でデータを共有します。<br>
+      全員が同じAPIキー・Bin IDを設定することでリアルタイム同期されます。
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:10px; color:var(--muted); font-family:var(--font-mono); display:block; margin-bottom:6px;">API KEY（X-Master-Key または X-Access-Key）</label>
+      <input type="password" id="jb-api-key" class="form-control" placeholder="$2a$10$..." style="font-family:var(--font-mono); font-size:12px;">
+      <div style="font-size:10px; color:var(--muted); margin-top:4px;">
+        <a href="https://jsonbin.io" target="_blank" style="color:var(--accent);">jsonbin.io</a> → 無料登録 → API Keys → CREATE ACCESS KEY
+      </div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:10px; color:var(--muted); font-family:var(--font-mono); display:block; margin-bottom:6px;">BIN ID（初回保存時に自動生成）</label>
+      <input type="text" id="jb-bin-id" class="form-control" placeholder="初回保存後に自動入力されます" style="font-family:var(--font-mono); font-size:12px;">
+      <div style="font-size:10px; color:var(--muted); margin-top:4px;">2人目以降はBin IDをコピーして貼り付けてください</div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-accent" onclick="saveSyncSettings()" style="flex:1;">設定を保存</button>
+      <button class="btn" onclick="testSyncConnection()" style="flex:1;">接続テスト</button>
+    </div>
+    <div id="sync-test-result" style="margin-top:12px; font-size:12px; font-family:var(--font-mono);"></div>
+    <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px; display:flex; gap:8px;">
+      <button class="btn" onclick="syncPush()" style="flex:1; font-size:12px;">↑ 今すぐアップロード</button>
+      <button class="btn" onclick="syncPull()" style="flex:1; font-size:12px;">↓ 今すぐ取得</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== DATA STORE ======
+const STORAGE_KEY = 'twg_finance_v2';
+const ACCOUNTS_KEY = 'twg_accounts_v1';
+const INV_KEY = 'twg_inventory_v1';
+const PREV_FIN_KEY = 'twg_prev_financials_v1';
+
+// Default account balances (from spreadsheet, in 万円)
+const DEFAULT_ACCOUNTS = {
+  '住信SBI（Techno）': 3199,
+  'みずほ（Techno）': 30,
+  '楽天証券（Techno）': 0,
+  'OKJ（Techno）': 0,
+  '住信SBI（Bushi）': 214,
+  '住信SBI（miracolo）': 229,
+  '個人現預金': 600,
+  'AMEX法人': 0,
+  'その他': 0
+};
+
+const ACCOUNT_COMPANY = {
+  '住信SBI（Techno）': 'techno',
+  'みずほ（Techno）': 'techno',
+  '楽天証券（Techno）': 'techno',
+  'OKJ（Techno）': 'techno',
+  '住信SBI（Bushi）': 'bushi',
+  '住信SBI（miracolo）': 'mira',
+  '個人現預金': 'kojin',
+  'AMEX法人': 'techno',
+  'その他': 'techno'
+};
+
+const CATEGORY_LABELS = {
+  sales_car: '売上（車両）',
+  sales_art: '売上（アート）',
+  sales_consulting: '売上（コンサル）',
+  sales_other: '売上（その他）',
+  cogs: '仕入・原価',
+  opex: '販管費',
+  borrow: '借入',
+  repay: '返済',
+  inter: 'グループ内移動',
+  invest: '投資・証券',
+  other: 'その他'
+};
+
+const IS_SALES = c => ['sales_car','sales_art','sales_other','sales_consulting'].includes(c);
+const IS_COGS  = c => c === 'cogs';
+const IS_OPEX  = c => c === 'opex';
+const IS_BORROW = c => c === 'borrow';
+const IS_REPAY = c => c === 'repay';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); autoSyncAfterWrite(); }
+function loadAccounts() {
+  try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || {...DEFAULT_ACCOUNTS}; } catch { return {...DEFAULT_ACCOUNTS}; }
+}
+function saveAccounts(a) { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)); autoSyncAfterWrite(); }
+function loadInventory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(INV_KEY));
+    if (saved && saved.length) return saved;
+    return SEED_INVENTORY;
+  } catch { return SEED_INVENTORY; }
+}
+function saveInventory_data(d) { localStorage.setItem(INV_KEY, JSON.stringify(d)); autoSyncAfterWrite(); }
+function loadPrevFinancials() {
+  try { return JSON.parse(localStorage.getItem(PREV_FIN_KEY)) || {}; } catch { return {}; }
+}
+function savePrevFinancials_data(d) { localStorage.setItem(PREV_FIN_KEY, JSON.stringify(d)); }
+
+// Seed inventory from spreadsheet
+const SEED_INVENTORY = [
+  // Techno アート（在庫中）
+  {id:1, company:'techno', kind:'アート', name:'Miwa Komatsu', supplier:'株式会社TRiCERA', buyDate:'2024-09-18', buyPrice:1783000, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  {id:2, company:'techno', kind:'アート', name:'絵画「Untitled」友沢こたお', supplier:'株式会社プレジデント・ギア', buyDate:'2024-11-29', buyPrice:6000000, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  {id:3, company:'techno', kind:'アート', name:'草間彌生 Night', supplier:'株式会社TRiCERA', buyDate:'2025-09-29', buyPrice:26701821, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  {id:4, company:'techno', kind:'アート', name:'Xiaomin Feng Composition n°8.1.24', supplier:'株式会社Art to Heritage', buyDate:'2025-12-19', buyPrice:30498770, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  {id:5, company:'techno', kind:'アート', name:'Xiaomin Feng Composition n°28.7.23', supplier:'株式会社Art to Heritage', buyDate:'2026-03-31', buyPrice:39642064, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  {id:6, company:'techno', kind:'アート', name:'Xiaomin Feng Composition n°25.12.25', supplier:'株式会社Art to Heritage', buyDate:'2026-03-31', buyPrice:11043066, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  // Techno アート（売却済）
+  {id:7, company:'techno', kind:'アート', name:'トライセラ絵画 Osvaldo Mariscotti', supplier:'株式会社TRiCERA', buyDate:'2024-12-03', buyPrice:5340000, buyer:'株式会社TRiCERA', sellDate:'2025-04-09', sellPrice:8007279, fee:792721, invoice:'', note:''},
+  {id:8, company:'techno', kind:'アート', name:'Lot12930 小松美羽 Gassho of the Rock Raccoon Dog', supplier:'株式会社TRiCERA', buyDate:'2025-02-21', buyPrice:7310312, buyer:'株式会社TRiCERA', sellDate:'2025-05-07', sellPrice:8189263, fee:810737, invoice:'', note:''},
+  {id:9, company:'techno', kind:'アート', name:'Xiaomin Feng「Composition n°1.8.24」', supplier:'株式会社TRiCERA', buyDate:'2025-06-27', buyPrice:14375124, buyer:'株式会社TRiCERA', sellDate:'2025-08-05', sellPrice:20394144, fee:2019020, invoice:'', note:''},
+  {id:10, company:'techno', kind:'アート', name:'14204 Xiaomin Feng Composition n°10.3.20', supplier:'株式会社TRiCERA', buyDate:'2025-08-19', buyPrice:16537531, buyer:'株式会社TRiCERA', sellDate:'2025-08-25', sellPrice:20241433, fee:2003902, invoice:'', note:''},
+  {id:11, company:'techno', kind:'アート', name:'Xiaomin Feng Composition N°18.12.24', supplier:'株式会社TRiCERA', buyDate:'2025-09-29', buyPrice:15973972, buyer:'株式会社TRiCERA', sellDate:'2025-10-10', sellPrice:23001856, fee:2277184, invoice:'', note:''},
+  {id:12, company:'techno', kind:'アート', name:'Osvaldo Mariscotti「Synergy Neo」', supplier:'株式会社TRiCERA', buyDate:'2025-07-28', buyPrice:10367924, buyer:'株式会社Art to Heritage', sellDate:'2025-12-26', sellPrice:11507130, fee:1139206, invoice:'', note:''},
+  {id:13, company:'techno', kind:'アート', name:'Xiaomin Feng Legerete No 28.8.18', supplier:'株式会社TRiCERA', buyDate:'2025-11-29', buyPrice:23147619, buyer:'株式会社Art to Heritage', sellDate:'2026-01-30', sellPrice:24417314, fee:2417314, invoice:'', note:''},
+  {id:14, company:'techno', kind:'アート', name:'Xiaomin Feng Rouge du bonheur N°18.6.18', supplier:'株式会社Art to Heritage', buyDate:'2025-12-19', buyPrice:15428447, buyer:'株式会社Art to Heritage', sellDate:'2026-02-11', sellPrice:22828416, fee:2260013, invoice:'', note:''},
+  {id:15, company:'techno', kind:'アート', name:'Xiaomin Feng Life', supplier:'株式会社Art to Heritage', buyDate:'2026-01-30', buyPrice:24471590, buyer:'株式会社Art to Heritage', sellDate:'2026-03-21', sellPrice:29876525, fee:2957776, invoice:'', note:''},
+  // Techno 中古車（在庫中）
+  {id:16, company:'techno', kind:'中古車', name:'ランボルギーニアヴェンタドールウルティメ', supplier:'コーンズ・モータース株式会社', buyDate:'2026-02-12', buyPrice:75411740, buyer:'池宮れい', sellDate:'2026-05-17', sellPrice:77000000, fee:0, invoice:'', note:''},
+  // Techno 中古車（売却済・代表例）
+  {id:17, company:'techno', kind:'中古車', name:'フェラーリ488ピスタ', supplier:'株式会社アキトス', buyDate:'2025-03-17', buyPrice:61000000, buyer:'株式会社アキトス', sellDate:'2025-03-24', sellPrice:62700000, fee:0, invoice:'', note:''},
+  {id:18, company:'techno', kind:'中古車', name:'ポルシェターボS青', supplier:'株式会社アキトス', buyDate:'2025-05-07', buyPrice:27500000, buyer:'株式会社アキトス', sellDate:'2025-06-10', sellPrice:29000000, fee:0, invoice:'', note:''},
+  {id:19, company:'techno', kind:'中古車', name:'フェラーリ296', supplier:'株式会社アキトス', buyDate:'2025-12-23', buyPrice:25000000, buyer:'株式会社miracolo', sellDate:'2026-01-19', sellPrice:25050000, fee:0, invoice:'', note:''},
+  {id:20, company:'techno', kind:'中古車', name:'Huracan EVO RWD Spyder', supplier:'ボロネーゼ株式会社', buyDate:'2026-02-27', buyPrice:30000000, buyer:'株式会社miracolo', sellDate:'2026-03-06', sellPrice:31500000, fee:0, invoice:'39', note:''},
+  {id:21, company:'techno', kind:'中古車', name:'McLaren 750S', supplier:'株式会社アキトス', buyDate:'2026-02-27', buyPrice:28150000, buyer:'株式会社miracolo', sellDate:'2026-03-24', sellPrice:28700000, fee:0, invoice:'40', note:''},
+  {id:22, company:'techno', kind:'中古車', name:'ランボルギーニウラカンブラック', supplier:'株式会社アキトス', buyDate:'2026-03-09', buyPrice:23000000, buyer:'株式会社miracolo', sellDate:'2026-03-19', sellPrice:22500000, fee:0, invoice:'41', note:''},
+  {id:23, company:'techno', kind:'中古車', name:'マクラーレン720', supplier:'株式会社アキトス', buyDate:'2026-03-09', buyPrice:20000000, buyer:'株式会社miracolo', sellDate:'2026-03-16', sellPrice:20200000, fee:0, invoice:'42', note:''},
+  {id:24, company:'techno', kind:'中古車', name:'マクラーレン765', supplier:'株式会社アキトス', buyDate:'2026-03-12', buyPrice:38700000, buyer:'株式会社miracolo', sellDate:'2026-03-12', sellPrice:38800000, fee:0, invoice:'43', note:''},
+  // miracolo 中古車（売却済・代表例）
+  {id:25, company:'mira', kind:'中古車', name:'フェラーリローマ白', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-01-19', buyPrice:15500000, buyer:'株式会社autoraise', sellDate:'2026-01-19', sellPrice:18467000, fee:0, invoice:'1', note:''},
+  {id:26, company:'mira', kind:'中古車', name:'フェラーリ296', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-01-19', buyPrice:25050000, buyer:'株式会社autoraise', sellDate:'2026-01-19', sellPrice:25111500, fee:0, invoice:'2', note:''},
+  {id:27, company:'mira', kind:'中古車', name:'ランボルギーニウラカンステラート', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-01-27', buyPrice:31000000, buyer:'株式会社autoraise', sellDate:'2026-01-27', sellPrice:34505350, fee:0, invoice:'4', note:''},
+  {id:28, company:'mira', kind:'中古車', name:'Huracan EVO RWD Spyder', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-03-06', buyPrice:31500000, buyer:'株式会社autoraise', sellDate:'2026-03-06', sellPrice:29695210, fee:0, invoice:'8', note:''},
+  {id:29, company:'mira', kind:'中古車', name:'McLaren 750S', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-03-24', buyPrice:28700000, buyer:'株式会社アキトス', sellDate:'2026-03-24', sellPrice:29417066, fee:0, invoice:'12', note:''},
+  // miracolo 中古車（在庫中）
+  {id:30, company:'mira', kind:'中古車', name:'アウディR8イエロー', supplier:'株式会社TechnoWealthGroup', buyDate:'2026-01-30', buyPrice:12000000, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:''},
+  // Techno その他（CHANEL等）
+  {id:31, company:'techno', kind:'その他', name:'CHANEL CAP RV AAA583B18528', supplier:'三越伊勢丹CHANEL', buyDate:'2026-02-08', buyPrice:185000, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:'テクノカード'},
+  {id:32, company:'techno', kind:'その他', name:'ハリーウィンストン時計 Zalium Variation Khaki/Black', supplier:'三越伊勢丹ハリーウィンストン', buyDate:'2026-02-08', buyPrice:3773000, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:'テクノカード'},
+  {id:33, company:'techno', kind:'その他', name:'CHANEL BOYCHANEL', supplier:'三越伊勢丹CHANEL', buyDate:'2026-02-23', buyPrice:1261700, buyer:'', sellDate:'', sellPrice:0, fee:0, invoice:'', note:'テクノカード'},
+];
+
+let transactions = loadData();
+let accounts = loadAccounts();
+let inventory = loadInventory();
+let prevFinancials = loadPrevFinancials();
+let currentPage = 'dashboard';
+let currentPLMonth = null;
+
+// ====== UTILS ======
+function fmt(n) { return n.toLocaleString('ja-JP', {minimumFractionDigits: n % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2}); }
+function fmtSign(n) { return (n >= 0 ? '+' : '') + fmt(n); }
+function today() { return new Date().toISOString().slice(0,10); }
+function dateLabel(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return (dt.getMonth()+1) + '/' + dt.getDate();
+}
+function getMonthKey(d) { return d.slice(0,7); }
+function getMonths() {
+  const s = new Set(transactions.map(t => getMonthKey(t.date)));
+  return [...s].sort().reverse();
+}
+function companyTag(c) {
+  const map = {techno:'Techno', bushi:'Bushi', mira:'Mira', kojin:'個人'};
+  return `<span class="tag tag-${c}">${map[c]||c}</span>`;
+}
+function typeTag(t) {
+  return t === 'in'
+    ? '<span class="tag tag-in">▲ IN</span>'
+    : '<span class="tag tag-out">▼ OUT</span>';
+}
+
+// ====== NAVIGATE ======
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById('pane-' + page);
+  if (pane) pane.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+
+  if (page === 'dashboard') renderDashboard();
+  else if (page === 'entry') renderEntry();
+  else if (page === 'cf') renderCF();
+  else if (page === 'pl') renderPL();
+  else if (page === 'bs') renderBS();
+  else if (page === 'plbs') renderPLBS();
+  else if (page === 'inventory') renderInventory();
+  else if (page === 'inv-entry') renderInvEntry();
+  else if (page === 'pdf-reader') renderPdfReader();
+  else if (page === 'import') { importStep = 1; goStep(1); }
+  else if (page === 'accounts') renderAccounts();
+}
+
+// ====== COMPUTE ACCOUNT BALANCES ======
+function computeBalances() {
+  const bal = {...accounts};
+  for (const t of transactions) {
+    if (!bal.hasOwnProperty(t.account)) bal[t.account] = 0;
+    bal[t.account] += t.type === 'in' ? t.amount : -t.amount;
+  }
+  return bal;
+}
+
+function totalCash(bal) {
+  return Object.values(bal).reduce((s,v) => s + (v || 0), 0);
+}
+
+// ====== DASHBOARD ======
+function renderDashboard() {
+  document.getElementById('today-label').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric', weekday:'short'});
+
+  const bal = computeBalances();
+  const cash = totalCash(bal);
+
+  // This month
+  const m = today().slice(0,7);
+  const monthTx = transactions.filter(t => t.date.startsWith(m));
+  const monthIn  = monthTx.filter(t => t.type==='in').reduce((s,t) => s+t.amount, 0);
+  const monthOut = monthTx.filter(t => t.type==='out').reduce((s,t) => s+t.amount, 0);
+  const totalAsset = cash; // simplified
+
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="metric accent">
+      <div class="metric-label">全体現金残高</div>
+      <div class="metric-value">¥${fmt(cash)}</div>
+      <div class="metric-sub">万円 / 全口座合計</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">今月IN</div>
+      <div class="metric-value v-pos">+${fmt(monthIn)}</div>
+      <div class="metric-sub">万円</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">今月OUT</div>
+      <div class="metric-value v-neg">-${fmt(monthOut)}</div>
+      <div class="metric-sub">万円</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">今月純CF</div>
+      <div class="metric-value ${monthIn-monthOut>=0?'v-pos':'v-neg'}">${fmtSign(monthIn-monthOut)}</div>
+      <div class="metric-sub">万円</div>
+    </div>
+  `;
+
+  // Account list
+  const maxBal = Math.max(...Object.values(bal).map(v => Math.abs(v)), 1);
+  const accountHtml = Object.entries(bal).map(([name, v]) => {
+    const co = ACCOUNT_COMPANY[name] || 'techno';
+    const pct = Math.max(0, Math.min(100, (v / maxBal) * 100));
+    const colors = {techno:'var(--techno)', bushi:'var(--bushi)', mira:'var(--mira)', kojin:'var(--kojin)'};
+    return `<div class="account-row">
+      <div class="account-name">${name}</div>
+      <div class="account-company">${companyTag(co)}</div>
+      <div class="account-bar-wrap">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${colors[co]};"></div></div>
+        <div class="account-val" style="color:${v<0?'var(--out)':'var(--text)'}">${v<0?'-':''}¥${fmt(Math.abs(v))}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('account-list').innerHTML = accountHtml;
+  document.getElementById('last-update-label').textContent = '基準値 + 入力分を自動反映';
+
+  // Recent transactions
+  const recent = [...transactions].sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id).slice(0,10);
+  renderTxRows('recent-body', recent);
+  document.getElementById('cf-count').textContent = transactions.length;
+}
+
+// ====== ENTRY ======
+function renderEntry() {
+  const d = document.getElementById('e-date');
+  if (!d.value) d.value = today();
+  renderTodayEntries();
+}
+
+function renderTodayEntries() {
+  const td = document.getElementById('e-date')?.value || today();
+  const todayTx = [...transactions].filter(t => t.date === td).sort((a,b) => b.id - a.id);
+  const count = document.getElementById('today-entry-count');
+  if (count) count.textContent = todayTx.length + '件';
+  const body = document.getElementById('today-body');
+  if (!body) return;
+  if (!todayTx.length) {
+    body.innerHTML = '<tr><td colspan="7" class="empty">本日の入力はまだありません</td></tr>';
+    return;
+  }
+  body.innerHTML = todayTx.map(t => `<tr>
+    <td>${companyTag(t.company)}</td>
+    <td style="font-size:11px;color:var(--muted)">${t.account}</td>
+    <td style="font-size:12px;">${CATEGORY_LABELS[t.category]||t.category}</td>
+    <td>${typeTag(t.type)}</td>
+    <td class="num" style="color:${t.type==='in'?'var(--in)':'var(--out)'}">${t.type==='in'?'+':'-'}${fmt(t.amount)}</td>
+    <td style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">${t.memo||''}</td>
+    <td><button onclick="deleteEntry(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;" title="削除">✕</button></td>
+  </tr>`).join('');
+}
+
+function saveEntry() {
+  const amount = parseFloat(document.getElementById('e-amount').value);
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+  const tx = {
+    id: Date.now(),
+    date: document.getElementById('e-date').value || today(),
+    company: document.getElementById('e-company').value,
+    account: document.getElementById('e-account').value,
+    type: document.getElementById('e-type').value,
+    category: document.getElementById('e-category').value,
+    amount: amount,
+    memo: document.getElementById('e-memo').value.trim()
+  };
+  transactions.push(tx);
+  saveData(transactions);
+  document.getElementById('e-amount').value = '';
+  document.getElementById('e-memo').value = '';
+  renderTodayEntries();
+  document.getElementById('cf-count').textContent = transactions.length;
+  showToast('✓ 登録しました');
+}
+
+function clearForm() {
+  document.getElementById('e-amount').value = '';
+  document.getElementById('e-memo').value = '';
+  document.getElementById('e-date').value = today();
+}
+
+function deleteEntry(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  saveData(transactions);
+  renderTodayEntries();
+  if (currentPage === 'dashboard') renderDashboard();
+  if (currentPage === 'cf') renderCF();
+  showToast('削除しました');
+}
+
+// ====== CF ======
+function renderCF() {
+  const search = (document.getElementById('cf-search')?.value || '').toLowerCase();
+  const fComp = document.getElementById('cf-filter-company')?.value || '';
+  const fType = document.getElementById('cf-filter-type')?.value || '';
+
+  let filtered = [...transactions].filter(t => {
+    if (fComp && t.company !== fComp) return false;
+    if (fType && t.type !== fType) return false;
+    if (search && !(t.memo||'').toLowerCase().includes(search) && !(CATEGORY_LABELS[t.category]||'').toLowerCase().includes(search) && !t.date.includes(search)) return false;
+    return true;
+  }).sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
+
+  const totalIn  = filtered.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  const totalOut = filtered.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+
+  document.getElementById('cf-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">表示件数</div><div class="metric-value">${filtered.length}</div><div class="metric-sub">件</div></div>
+    <div class="metric"><div class="metric-label">IN合計</div><div class="metric-value v-pos">+${fmt(totalIn)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">OUT合計</div><div class="metric-value v-neg">-${fmt(totalOut)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">純CF</div><div class="metric-value ${totalIn-totalOut>=0?'v-pos':'v-neg'}">${fmtSign(totalIn-totalOut)}</div><div class="metric-sub">万円</div></div>
+  `;
+
+  document.getElementById('cf-total-count').textContent = filtered.length + '件';
+  renderTxRows('cf-body', filtered, true);
+}
+
+function renderTxRows(bodyId, txs, showDelete) {
+  const body = document.getElementById(bodyId);
+  if (!txs.length) { body.innerHTML = '<tr><td colspan="8" class="empty">データがありません</td></tr>'; return; }
+  body.innerHTML = txs.map(t => `<tr>
+    <td style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${t.date}</td>
+    <td>${companyTag(t.company)}</td>
+    <td style="font-size:11px;color:var(--muted)">${t.account}</td>
+    <td style="font-size:12px;">${CATEGORY_LABELS[t.category]||t.category}</td>
+    <td>${typeTag(t.type)}</td>
+    <td class="num" style="color:${t.type==='in'?'var(--in)':'var(--out)'}; font-weight:500;">${t.type==='in'?'+':'-'}${fmt(t.amount)}</td>
+    <td style="font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.memo||''}</td>
+    ${showDelete ? `<td><button onclick="deleteEntry(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;" title="削除">✕</button></td>` : '<td></td>'}
+  </tr>`).join('');
+}
+
+// ====== PL ======
+function renderPL() {
+  const months = getMonths();
+  if (!months.length) {
+    document.getElementById('pl-month-tabs').innerHTML = '';
+    document.getElementById('pl-metrics').innerHTML = '<div style="color:var(--muted);padding:20px;">取引を入力するとPLが自動生成されます</div>';
+    document.getElementById('pl-table').innerHTML = '';
+    document.getElementById('pl-breakdown').innerHTML = '';
+    document.getElementById('pl-company').innerHTML = '';
+    return;
+  }
+  if (!currentPLMonth || !months.includes(currentPLMonth)) currentPLMonth = months[0];
+
+  document.getElementById('pl-month-tabs').innerHTML = months.map(m => {
+    const [y, mo] = m.split('-');
+    return `<button class="month-tab ${m===currentPLMonth?'active':''}" onclick="selectPLMonth('${m}')">${y}年${parseInt(mo)}月</button>`;
+  }).join('');
+
+  const mTx = transactions.filter(t => t.date.startsWith(currentPLMonth));
+
+  const sales_car  = mTx.filter(t=>t.type==='in'&&t.category==='sales_car').reduce((s,t)=>s+t.amount,0);
+  const sales_art  = mTx.filter(t=>t.type==='in'&&t.category==='sales_art').reduce((s,t)=>s+t.amount,0);
+  const sales_con  = mTx.filter(t=>t.type==='in'&&t.category==='sales_consulting').reduce((s,t)=>s+t.amount,0);
+  const sales_oth  = mTx.filter(t=>t.type==='in'&&t.category==='sales_other').reduce((s,t)=>s+t.amount,0);
+  const sales = sales_car + sales_art + sales_con + sales_oth;
+  const cogs  = mTx.filter(t=>t.type==='out'&&t.category==='cogs').reduce((s,t)=>s+t.amount,0);
+  const gross = sales - cogs;
+  const opex  = mTx.filter(t=>t.type==='out'&&t.category==='opex').reduce((s,t)=>s+t.amount,0);
+  const opInc = gross - opex;
+
+  document.getElementById('pl-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">売上高</div><div class="metric-value v-pos">+${fmt(sales)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">売上原価</div><div class="metric-value v-neg">-${fmt(cogs)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric accent"><div class="metric-label">粗利益</div><div class="metric-value">${fmt(gross)}</div><div class="metric-sub">万円 / 粗利率 ${sales?Math.round(gross/sales*100):0}%</div></div>
+    <div class="metric"><div class="metric-label">営業利益</div><div class="metric-value ${opInc>=0?'v-pos':'v-neg'}">${fmtSign(opInc)}</div><div class="metric-sub">万円</div></div>
+  `;
+
+  // PL Table
+  document.getElementById('pl-table').innerHTML = `
+    <div class="pl-row"><span class="pl-label">売上高</span><span class="pl-val v-pos">¥${fmt(sales)}</span></div>
+    <div class="pl-row indent"><span class="pl-label">車両売上</span><span class="pl-val">¥${fmt(sales_car)}</span></div>
+    <div class="pl-row indent"><span class="pl-label">アート売上</span><span class="pl-val">¥${fmt(sales_art)}</span></div>
+    <div class="pl-row indent"><span class="pl-label">コンサルティング売上</span><span class="pl-val">¥${fmt(sales_con)}</span></div>
+    <div class="pl-row indent"><span class="pl-label">その他売上</span><span class="pl-val">¥${fmt(sales_oth)}</span></div>
+    <div class="pl-row subtotal"><span class="pl-label">売上原価</span><span class="pl-val v-neg">-¥${fmt(cogs)}</span></div>
+    <div class="pl-row total"><span class="pl-label">粗利益</span><span class="pl-val ${gross>=0?'v-pos':'v-neg'}">¥${fmt(gross)}</span></div>
+    <div class="pl-row"><span class="pl-label">販売管理費</span><span class="pl-val v-neg">-¥${fmt(opex)}</span></div>
+    <div class="pl-row total"><span class="pl-label">営業利益</span><span class="pl-val ${opInc>=0?'v-pos':'v-neg'}">¥${fmt(opInc)}</span></div>
+    <div style="padding:10px 18px; font-size:10px; color:var(--muted); font-family:var(--font-mono);">※ 借入・返済・グループ内移動は除外</div>
+  `;
+
+  // Breakdown bars
+  const categories = [
+    {label:'車両売上', val:sales_car, color:'var(--techno)'},
+    {label:'アート売上', val:sales_art, color:'var(--mira)'},
+    {label:'コンサル売上', val:sales_con, color:'var(--accent)'},
+    {label:'その他売上', val:sales_oth, color:'var(--bushi)'},
+  ];
+  const maxCat = Math.max(...categories.map(c=>c.val), 1);
+  document.getElementById('pl-breakdown').innerHTML = categories.map(c => `
+    <div class="pl-row">
+      <span class="pl-label">${c.label}</span>
+      <div style="flex:1; margin:0 12px;">
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(c.val/maxCat*100)}%; background:${c.color};"></div></div>
+      </div>
+      <span class="pl-val">¥${fmt(c.val)}</span>
+    </div>
+  `).join('') + '<div style="padding:10px 18px; font-size:10px; color:var(--muted); font-family:var(--font-mono);">売上のみ表示</div>';
+
+  // Company comparison
+  const companies = ['techno','bushi','mira','kojin'];
+  const coLabels = {techno:'TechnoWealthGroup', bushi:'BushidoWorks', mira:'miracolo', kojin:'個人'};
+  const maxCoSales = Math.max(...companies.map(co => {
+    return mTx.filter(t=>t.company===co&&t.type==='in'&&IS_SALES(t.category)).reduce((s,t)=>s+t.amount,0);
+  }), 1);
+
+  document.getElementById('pl-company').innerHTML = companies.map(co => {
+    const coIn  = mTx.filter(t=>t.company===co&&t.type==='in'&&IS_SALES(t.category)).reduce((s,t)=>s+t.amount,0);
+    const coOut = mTx.filter(t=>t.company===co&&t.type==='out'&&IS_COGS(t.category)).reduce((s,t)=>s+t.amount,0);
+    const coGross = coIn - coOut;
+    return `<div class="pl-row">
+      <span class="pl-label" style="min-width:160px;">${coLabels[co]}</span>
+      <span style="margin-right:8px;">${companyTag(co)}</span>
+      <div style="flex:1; margin:0 12px;">
+        <div class="bar-bg" style="height:6px;">
+          <div class="bar-fill" style="width:${Math.round(coIn/maxCoSales*100)}%; background:var(--in); height:6px;"></div>
+        </div>
+      </div>
+      <span class="pl-val" style="min-width:80px; text-align:right;">¥${fmt(coIn)}</span>
+      <span class="pl-val v-neg" style="min-width:80px; text-align:right; margin-left:8px;">-¥${fmt(coOut)}</span>
+      <span class="pl-val ${coGross>=0?'v-pos':'v-neg'}" style="min-width:80px; text-align:right; margin-left:8px;">= ¥${fmt(coGross)}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectPLMonth(m) {
+  currentPLMonth = m;
+  renderPL();
+}
+
+// ====== BS ======
+function renderBS() {
+  const bal = computeBalances();
+  const cash = totalCash(bal);
+
+  // Simplified BS from data
+  const allOut = transactions.filter(t=>t.type==='out');
+  const allIn  = transactions.filter(t=>t.type==='in');
+  const borrows = allIn.filter(t=>IS_BORROW(t.category)).reduce((s,t)=>s+t.amount,0);
+  const repays  = allOut.filter(t=>IS_REPAY(t.category)).reduce((s,t)=>s+t.amount,0);
+  const netBorrow = Math.max(0, borrows - repays);
+
+  // From spreadsheet initial values
+  const artStock = 8946;
+  const carStock = 5815;
+  const otherAsset = 19380;
+
+  const totalAsset = cash + artStock + carStock + otherAsset;
+  const totalLiab = netBorrow;
+  const netAsset = totalAsset - totalLiab;
+
+  document.getElementById('bs-metrics').innerHTML = `
+    <div class="metric accent"><div class="metric-label">総資産</div><div class="metric-value">¥${fmt(totalAsset)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">流動資産（現金）</div><div class="metric-value">¥${fmt(cash)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">固定・在庫資産</div><div class="metric-value">¥${fmt(artStock+carStock+otherAsset)}</div><div class="metric-sub">万円</div></div>
+    <div class="metric"><div class="metric-label">純資産（推計）</div><div class="metric-value v-pos">¥${fmt(netAsset)}</div><div class="metric-sub">万円</div></div>
+  `;
+
+  const assetItems = [
+    {label:'現金・預金', val: cash, sub: '全口座合計'},
+    {label:'アート在庫', val: artStock, sub: 'スプシ基準値'},
+    {label:'車両在庫', val: carStock, sub: 'スプシ基準値'},
+    {label:'その他資産', val: otherAsset, sub: 'スプシ基準値'},
+  ];
+  document.getElementById('bs-assets').innerHTML = assetItems.map(i => `
+    <div class="pl-row"><span class="pl-label">${i.label}<br><span style="font-size:10px;color:var(--muted2)">${i.sub}</span></span><span class="pl-val">¥${fmt(i.val)}</span></div>
+  `).join('') + `<div class="pl-row total"><span class="pl-label">資産合計</span><span class="pl-val v-pos">¥${fmt(totalAsset)}</span></div>`;
+
+  document.getElementById('bs-liabilities').innerHTML = `
+    <div class="pl-row"><span class="pl-label">借入金（推計）</span><span class="pl-val v-neg">-¥${fmt(netBorrow)}</span></div>
+    <div class="pl-row"><span class="pl-label">クレジット未払（別途）</span><span class="pl-val v-neg">-</span></div>
+    <div class="pl-row total"><span class="pl-label">負債合計</span><span class="pl-val v-neg">-¥${fmt(totalLiab)}</span></div>
+    <div style="height:1px; background:var(--border); margin:8px 18px;"></div>
+    <div class="pl-row total"><span class="pl-label">純資産</span><span class="pl-val v-pos">¥${fmt(netAsset)}</span></div>
+    <div style="padding:10px 18px; font-size:10px; color:var(--muted); font-family:var(--font-mono);">※ 在庫・その他資産はスプシ基準値。取引入力で借入/返済を記録することで自動更新されます。</div>
+  `;
+
+  // Composition bars
+  const items = [
+    {label:'現金・預金', val:cash, color:'var(--techno)'},
+    {label:'アート在庫', val:artStock, color:'var(--mira)'},
+    {label:'車両在庫', val:carStock, color:'var(--bushi)'},
+    {label:'その他資産', val:otherAsset, color:'var(--kojin)'},
+  ];
+  const maxAsset = Math.max(...items.map(i=>i.val), 1);
+  document.getElementById('bs-bar').innerHTML = items.map(i => `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+      <div style="width:120px; font-size:12px; color:var(--muted); flex-shrink:0;">${i.label}</div>
+      <div style="flex:1; height:8px; background:var(--bg3); border-radius:4px; overflow:hidden;">
+        <div style="width:${Math.round(i.val/maxAsset*100)}%; height:100%; background:${i.color}; border-radius:4px; transition:width 0.5s ease;"></div>
+      </div>
+      <div style="font-family:var(--font-mono); font-size:12px; min-width:80px; text-align:right;">¥${fmt(i.val)}</div>
+      <div style="font-family:var(--font-mono); font-size:10px; color:var(--muted); min-width:36px; text-align:right;">${Math.round(i.val/totalAsset*100)}%</div>
+    </div>
+  `).join('');
+}
+
+// ====== CSV IMPORT ======
+let importStep = 1;
+let selectedBank = 'shinsei';
+let parsedRows = [];
+
+const BANK_FORMATS = {
+  shinsei: {
+    name: '住信SBIネット銀行',
+    hint: '取引日, 内容, 出金金額(円), 入金金額(円), 残高(円)<br>ネットバンキング → 入出金明細 → CSV出力',
+    parse: parseShinseiCSV
+  },
+  mizuho: {
+    name: 'みずほ銀行',
+    hint: '取引日付, 摘要, お支払い金額, お預り金額, 差引残高<br>みずほダイレクト → 入出金明細 → ダウンロード',
+    parse: parseMizuhoCSV
+  },
+  rakuten: {
+    name: '楽天証券',
+    hint: '取引日, 取引区分, 銘柄コード, 銘柄名, 数量, 単価, 手数料, 受渡金額<br>マイページ → 取引履歴 → CSV',
+    parse: parseRakutenShokenCSV
+  },
+  rakutenbank: {
+    name: '楽天銀行',
+    hint: '取引日, 入出金先・摘要, 支払金額, 預り金額, 残高<br>楽天銀行 → 入出金明細 → CSV形式で保存',
+    parse: parseRakutenBankCSV
+  },
+  generic: {
+    name: '汎用CSV',
+    hint: '日付（YYYY/MM/DD）, 摘要/説明, 金額（正=入金, 負=出金）<br>または: 日付, 摘要, 出金, 入金 の順でも可',
+    parse: parseGenericCSV
+  }
+};
+
+function selectBank(key) {
+  selectedBank = key;
+  document.querySelectorAll('.bank-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('bank-' + key).classList.add('selected');
+  document.getElementById('bank-format-hint').innerHTML =
+    `<strong style="color:var(--text);">${BANK_FORMATS[key].name}</strong> のCSVフォーマット<br>${BANK_FORMATS[key].hint}`;
+}
+
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function onDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processCSVFile(file);
+}
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processCSVFile(file);
+}
+
+function processCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    try {
+      const parser = BANK_FORMATS[selectedBank].parse;
+      parsedRows = parser(text);
+      const status = document.getElementById('file-status');
+      status.textContent = `✓ ${file.name} — ${parsedRows.length}件を解析しました`;
+      status.style.color = 'var(--in)';
+      const btn = document.getElementById('step2-next');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    } catch(err) {
+      document.getElementById('file-status').textContent = '⚠ 解析エラー: ' + err.message;
+      document.getElementById('file-status').style.color = 'var(--out)';
+    }
+  };
+  reader.readAsText(file, 'Shift_JIS');
+}
+
+// ---- Parsers ----
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQ = !inQ; continue; }
+    if (line[i] === ',' && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+    cur += line[i];
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function normalizeDate(s) {
+  if (!s) return null;
+  s = s.replace(/[年月]/g, '/').replace(/[日]/g, '').trim();
+  const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (!m) return null;
+  return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+}
+
+function parseNum(s) {
+  if (!s) return 0;
+  return parseFloat(String(s).replace(/[,，\s円￥]/g, '')) || 0;
+}
+
+function toMan(yen) { return Math.round(yen / 100) / 100; }
+
+function parseShinseiCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const rows = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    const date = normalizeDate(cols[0]);
+    if (!date) continue;
+    const memo = cols[1] || '';
+    const outAmt = parseNum(cols[2]);
+    const inAmt  = parseNum(cols[3]);
+    if (outAmt > 0) rows.push({ date, memo, type:'out', amountYen: outAmt });
+    if (inAmt  > 0) rows.push({ date, memo, type:'in',  amountYen: inAmt  });
+  }
+  return rows;
+}
+
+function parseMizuhoCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const rows = [];
+  for (const line of lines) {
+    const cols = parseCSVLine(line);
+    const date = normalizeDate(cols[0]);
+    if (!date) continue;
+    const memo = cols[1] || '';
+    const outAmt = parseNum(cols[2]);
+    const inAmt  = parseNum(cols[3]);
+    if (outAmt > 0) rows.push({ date, memo, type:'out', amountYen: outAmt });
+    if (inAmt  > 0) rows.push({ date, memo, type:'in',  amountYen: inAmt  });
+  }
+  return rows;
+}
+
+function parseRakutenShokenCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const rows = [];
+  for (const line of lines) {
+    const cols = parseCSVLine(line);
+    const date = normalizeDate(cols[0]);
+    if (!date) continue;
+    const type_str = cols[1] || '';
+    const amount = parseNum(cols[7] || cols[6] || '0');
+    if (!amount) continue;
+    const isIn = type_str.includes('売') || type_str.includes('配当') || type_str.includes('入金');
+    rows.push({ date, memo: type_str + (cols[3]?' '+cols[3]:''), type: isIn ? 'in' : 'out', amountYen: Math.abs(amount) });
+  }
+  return rows;
+}
+
+function parseRakutenBankCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const rows = [];
+  for (const line of lines) {
+    const cols = parseCSVLine(line);
+    const date = normalizeDate(cols[0]);
+    if (!date) continue;
+    const memo = cols[1] || '';
+    const outAmt = parseNum(cols[2]);
+    const inAmt  = parseNum(cols[3]);
+    if (outAmt > 0) rows.push({ date, memo, type:'out', amountYen: outAmt });
+    if (inAmt  > 0) rows.push({ date, memo, type:'in',  amountYen: inAmt  });
+  }
+  return rows;
+}
+
+function parseGenericCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const rows = [];
+  for (const line of lines) {
+    const cols = parseCSVLine(line);
+    const date = normalizeDate(cols[0]);
+    if (!date || cols.length < 2) continue;
+    const memo = cols[1] || '';
+    if (cols.length >= 4) {
+      const out = parseNum(cols[2]), inn = parseNum(cols[3]);
+      if (out > 0) rows.push({ date, memo, type:'out', amountYen: out });
+      if (inn > 0) rows.push({ date, memo, type:'in',  amountYen: inn });
+    } else {
+      const amt = parseNum(cols[2]);
+      if (!amt) continue;
+      rows.push({ date, memo, type: amt > 0 ? 'in' : 'out', amountYen: Math.abs(amt) });
+    }
+  }
+  return rows;
+}
+
+// ---- Preview ----
+function goStep3Preview() {
+  const company  = document.getElementById('import-company').value;
+  const account  = document.getElementById('import-account').value;
+  const existKey = new Set(transactions.map(t => t.date + '|' + t.amount + '|' + t.type + '|' + t.account));
+
+  const previewRows = parsedRows.map((r, i) => {
+    const amtMan = toMan(r.amountYen);
+    const key = r.date + '|' + amtMan + '|' + r.type + '|' + account;
+    const isDup = existKey.has(key);
+    return { ...r, amtMan, isDup, company, account, category: guessCategory(r.memo, r.type), idx: i, checked: !isDup };
+  });
+
+  let selCount = 0, dupCount = 0, total = 0;
+  const tbody = document.getElementById('preview-body');
+  tbody.innerHTML = previewRows.map((r, i) => {
+    if (r.isDup) dupCount++;
+    if (!r.isDup) { selCount++; total += r.amtMan; }
+    return `<tr style="${r.isDup ? 'opacity:0.45;' : ''}">
+      <td><input type="checkbox" class="row-chk" data-idx="${i}" ${r.checked ? 'checked' : ''} ${r.isDup ? 'disabled' : ''} onchange="updateImportCounts()"></td>
+      <td style="font-family:var(--font-mono);font-size:11px;">${r.date}</td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${r.memo}</td>
+      <td>${typeTag(r.type)}</td>
+      <td class="num" style="color:${r.type==='in'?'var(--in)':'var(--out)'};font-weight:500;">${r.type==='in'?'+':'-'}${fmt(r.amtMan)}</td>
+      <td>
+        <select class="form-control" style="padding:3px 6px;font-size:11px;width:120px;" data-cat="${i}">
+          ${Object.entries(CATEGORY_LABELS).map(([k,v]) => `<option value="${k}" ${k===r.category?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </td>
+      <td style="font-size:10px;color:${r.isDup?'var(--out)':'var(--muted)'};">${r.isDup ? '重複' : ''}</td>
+    </tr>`;
+  }).join('');
+
+  window._previewRows = previewRows;
+  document.getElementById('preview-count').textContent = previewRows.length + '件';
+  document.getElementById('import-count-selected').textContent = selCount;
+  document.getElementById('import-count-dup').textContent = dupCount;
+  document.getElementById('import-total').textContent = fmt(total) + '万円';
+}
+
+function updateImportCounts() {
+  const chks = document.querySelectorAll('.row-chk:checked:not(:disabled)');
+  let total = 0;
+  chks.forEach(c => {
+    const r = window._previewRows[parseInt(c.dataset.idx)];
+    total += r.type === 'in' ? r.amtMan : -r.amtMan;
+  });
+  document.getElementById('import-count-selected').textContent = chks.length;
+  document.getElementById('import-total').textContent = fmt(Math.abs(total)) + '万円';
+}
+
+function toggleAll(checked) {
+  document.querySelectorAll('.row-chk:not(:disabled)').forEach(c => c.checked = checked);
+  updateImportCounts();
+}
+
+function guessCategory(memo, type) {
+  const m = (memo || '').toLowerCase();
+  if (type === 'in') {
+    if (m.includes('配当') || m.includes('利息') || m.includes('利子')) return 'sales_other';
+    if (m.includes('売') && (m.includes('車') || m.includes('ポルシェ') || m.includes('フェラーリ') || m.includes('マクラーレン') || m.includes('bmw'))) return 'sales_car';
+    if (m.includes('アート') || m.includes('絵') || m.includes('art')) return 'sales_art';
+    if (m.includes('借入') || m.includes('融資') || m.includes('ローン')) return 'borrow';
+    if (m.includes('振替') || m.includes('グループ') || m.includes('テクノ') || m.includes('武士') || m.includes('ミラコロ')) return 'inter';
+    return 'sales_other';
+  } else {
+    if (m.includes('仕入') || m.includes('買取') || m.includes('購入') || m.includes('頭金')) return 'cogs';
+    if (m.includes('返済') || m.includes('弁済')) return 'repay';
+    if (m.includes('振替') || m.includes('グループ') || m.includes('テクノ') || m.includes('武士')) return 'inter';
+    if (m.includes('給与') || m.includes('家賃') || m.includes('保険') || m.includes('税')) return 'opex';
+    return 'opex';
+  }
+}
+
+
+function goStep(n) {
+  importStep = n;
+  [1,2,3].forEach(i => {
+    document.getElementById('import-step' + i).style.display = i === n ? 'block' : 'none';
+    const el = document.getElementById('step' + i + '-label');
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+  if (n === 2) {
+    document.getElementById('selected-bank-label').textContent = BANK_FORMATS[selectedBank].name;
+    document.getElementById('file-status').textContent = '';
+    const btn = document.getElementById('step2-next');
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+  }
+  if (n === 3) goStep3Preview();
+}
+
+function executeImport() {
+  const chks = document.querySelectorAll('.row-chk:checked:not(:disabled)');
+  let count = 0;
+  chks.forEach(c => {
+    const i = parseInt(c.dataset.idx);
+    const r = window._previewRows[i];
+    const catEl = document.querySelector(`[data-cat="${i}"]`);
+    const cat = catEl ? catEl.value : r.category;
+    transactions.push({
+      id: Date.now() + Math.random(),
+      date: r.date,
+      company: r.company,
+      account: r.account,
+      type: r.type,
+      category: cat,
+      amount: r.amtMan,
+      memo: r.memo,
+      source: 'csv'
+    });
+    count++;
+  });
+  saveData(transactions);
+  document.getElementById('cf-count').textContent = transactions.length;
+  showToast(`✓ ${count}件を取込みました`);
+  parsedRows = [];
+  navigate('cf');
+}
+
+// ====== ACCOUNTS ======
+function renderAccounts() {
+  const body = document.getElementById('accounts-edit-body');
+  body.innerHTML = Object.entries(accounts).map(([name, bal]) => {
+    const co = ACCOUNT_COMPANY[name] || 'techno';
+    return `<div class="acc-row">
+      <div class="acc-name">${companyTag(co)} ${name}</div>
+      <input class="acc-bal-input" type="number" step="0.01" value="${bal}" data-acc="${name}" placeholder="0">
+      <span style="font-size:11px; color:var(--muted); font-family:var(--font-mono); margin-left:4px;">万円</span>
+      <button onclick="removeAccount('${name}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-left:8px;" title="削除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function saveAccountBalances() {
+  document.querySelectorAll('.acc-bal-input').forEach(inp => {
+    const name = inp.dataset.acc;
+    const val = parseFloat(inp.value) || 0;
+    accounts[name] = val;
+    ACCOUNT_COMPANY[name] = ACCOUNT_COMPANY[name] || 'techno';
+  });
+  saveAccounts(accounts);
+  showToast('✓ 口座残高を保存しました');
+}
+
+function removeAccount(name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  delete accounts[name];
+  saveAccounts(accounts);
+  renderAccounts();
+}
+
+function addAccount() {
+  const name = document.getElementById('new-acc-name').value.trim();
+  const co   = document.getElementById('new-acc-company').value;
+  const bal  = parseFloat(document.getElementById('new-acc-bal').value) || 0;
+  if (!name) { showToast('口座名を入力してください'); return; }
+  accounts[name] = bal;
+  ACCOUNT_COMPANY[name] = co;
+  saveAccounts(accounts);
+  document.getElementById('new-acc-name').value = '';
+  document.getElementById('new-acc-bal').value = '';
+  renderAccounts();
+  showToast(`✓ 「${name}」を追加しました`);
+}
+// ====== INVENTORY ======
+function invGrossProfit(item) {
+  if (!item.sellPrice) return null;
+  const net = item.sellPrice - (item.fee || 0);
+  return net - item.buyPrice;
+}
+function invProfitRate(item) {
+  const gp = invGrossProfit(item);
+  if (gp === null || !item.buyPrice) return null;
+  return gp / item.buyPrice * 100;
+}
+function fmtYen(n) {
+  if (!n && n !== 0) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 100000000) return sign + '¥' + (abs/100000000).toFixed(2) + '億';
+  if (abs >= 10000) return sign + '¥' + Math.round(abs/10000).toLocaleString() + '万';
+  return sign + '¥' + abs.toLocaleString();
+}
+function kindTag(k) {
+  const cls = k === 'アート' ? 'kind-art' : k === '中古車' ? 'kind-car' : 'kind-other';
+  return `<span class="kind-tag ${cls}">${k}</span>`;
+}
+
+function renderInventory() {
+  const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
+  const fKind = document.getElementById('inv-filter-kind')?.value || '';
+  const fComp = document.getElementById('inv-filter-company')?.value || '';
+  const fStat = document.getElementById('inv-filter-status')?.value || '';
+
+  const filtered = inventory.filter(i => {
+    if (fKind && i.kind !== fKind) return false;
+    if (fComp && i.company !== fComp) return false;
+    if (fStat === 'holding' && i.sellDate) return false;
+    if (fStat === 'sold' && !i.sellDate) return false;
+    if (search && !(i.name||'').toLowerCase().includes(search) && !(i.supplier||'').toLowerCase().includes(search) && !(i.buyer||'').toLowerCase().includes(search)) return false;
+    return true;
+  }).sort((a,b) => (b.buyDate||'').localeCompare(a.buyDate||''));
+
+  // Metrics
+  const holding = inventory.filter(i => !i.sellDate);
+  const sold = inventory.filter(i => i.sellDate);
+  const holdingVal = holding.reduce((s,i) => s + (i.buyPrice||0), 0);
+  const totalGP = sold.reduce((s,i) => s + (invGrossProfit(i)||0), 0);
+  const totalSales = sold.reduce((s,i) => s + (i.sellPrice||0), 0);
+
+  document.getElementById('inv-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">在庫件数</div><div class="metric-value">${holding.length}</div><div class="metric-sub">件（在庫中）</div></div>
+    <div class="metric"><div class="metric-label">在庫評価額</div><div class="metric-value">${fmtYen(holdingVal)}</div><div class="metric-sub">仕入原価合計</div></div>
+    <div class="metric accent"><div class="metric-label">累計粗利益</div><div class="metric-value ${totalGP>=0?'v-pos':'v-neg'}">${totalGP>=0?'+':''}${fmtYen(totalGP)}</div><div class="metric-sub">売却済み全件</div></div>
+    <div class="metric"><div class="metric-label">累計売上</div><div class="metric-value">${fmtYen(totalSales)}</div><div class="metric-sub">売却済み全件</div></div>
+  `;
+  document.getElementById('inv-count').textContent = inventory.length;
+  document.getElementById('inv-table-count').textContent = filtered.length + '件';
+
+  const body = document.getElementById('inv-body');
+  if (!filtered.length) { body.innerHTML = '<tr><td colspan="13" class="empty">該当する在庫がありません</td></tr>'; return; }
+  body.innerHTML = filtered.map(item => {
+    const gp = invGrossProfit(item);
+    const rate = invProfitRate(item);
+    const isSold = !!item.sellDate;
+    const gpColor = gp === null ? '' : gp >= 0 ? 'color:var(--in)' : 'color:var(--out)';
+    const statusHtml = !isSold
+      ? '<span class="inv-status inv-holding">在庫中</span>'
+      : gp >= 0
+        ? '<span class="inv-status inv-sold">売却済</span>'
+        : '<span class="inv-status inv-loss">売却済（損）</span>';
+    return `<tr>
+      <td>${kindTag(item.kind)}</td>
+      <td>${companyTag(item.company)}</td>
+      <td style="font-size:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.name}">${item.name}</td>
+      <td style="font-size:11px; color:var(--muted); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.supplier||'—'}</td>
+      <td style="font-family:var(--font-mono); font-size:11px; color:var(--muted);">${item.buyDate||'—'}</td>
+      <td class="num">${fmtYen(item.buyPrice)}</td>
+      <td style="font-size:11px; color:var(--muted); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.buyer||'—'}</td>
+      <td style="font-family:var(--font-mono); font-size:11px; color:var(--muted);">${item.sellDate||'—'}</td>
+      <td class="num">${item.sellPrice ? fmtYen(item.sellPrice) : '—'}</td>
+      <td class="num" style="${gpColor}; font-weight:500;">${gp !== null ? (gp>=0?'+':'')+fmtYen(gp) : '—'}</td>
+      <td class="num" style="${gpColor};">${rate !== null ? rate.toFixed(1)+'%' : '—'}</td>
+      <td>${statusHtml}</td>
+      <td>
+        <button onclick="editInventoryItem(${item.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">編集</button>
+        <button onclick="deleteInventoryItem(${item.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderInvEntry() {
+  const d = document.getElementById('inv-e-buy-date');
+  if (!d.value) d.value = today();
+  renderHoldingList();
+}
+
+function renderHoldingList() {
+  const holding = inventory.filter(i => !i.sellDate).sort((a,b) => (b.buyDate||'').localeCompare(a.buyDate||''));
+  document.getElementById('holding-count').textContent = holding.length + '件';
+  const body = document.getElementById('holding-body');
+  if (!holding.length) { body.innerHTML = '<tr><td colspan="7" class="empty">在庫中の商品はありません</td></tr>'; return; }
+  body.innerHTML = holding.map(i => `<tr>
+    <td>${kindTag(i.kind)}</td>
+    <td>${companyTag(i.company)}</td>
+    <td style="font-size:12px;">${i.name}</td>
+    <td style="font-family:var(--font-mono); font-size:11px; color:var(--muted);">${i.buyDate||'—'}</td>
+    <td class="num">${fmtYen(i.buyPrice)}</td>
+    <td style="font-size:11px; color:var(--muted);">${i.supplier||'—'}</td>
+    <td>
+      <button onclick="editInventoryItem(${i.id})" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;">売却入力</button>
+      <button onclick="deleteInventoryItem(${i.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px; margin-left:4px;">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function saveInventory() {
+  const name = document.getElementById('inv-e-name').value.trim();
+  if (!name) { showToast('商品名を入力してください'); return; }
+  const buyPrice = parseFloat(document.getElementById('inv-e-buy-price').value) || 0;
+  const sellPrice = parseFloat(document.getElementById('inv-e-sell-price').value) || 0;
+  const item = {
+    id: Date.now(),
+    company: document.getElementById('inv-e-company').value,
+    kind: document.getElementById('inv-e-kind').value,
+    name,
+    supplier: document.getElementById('inv-e-supplier').value.trim(),
+    buyDate: document.getElementById('inv-e-buy-date').value,
+    buyPrice,
+    buyer: document.getElementById('inv-e-buyer').value.trim(),
+    sellDate: document.getElementById('inv-e-sell-date').value,
+    sellPrice,
+    fee: parseFloat(document.getElementById('inv-e-fee').value) || 0,
+    invoice: document.getElementById('inv-e-invoice').value.trim(),
+    note: ''
+  };
+  inventory.push(item);
+  saveInventory_data(inventory);
+  document.getElementById('inv-count').textContent = inventory.length;
+  clearInvForm();
+  renderHoldingList();
+  showToast('✓ 在庫を登録しました');
+}
+
+function clearInvForm() {
+  ['inv-e-name','inv-e-supplier','inv-e-buyer','inv-e-invoice','inv-e-fee'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['inv-e-buy-price','inv-e-sell-price','inv-e-fee'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('inv-e-sell-date').value = '';
+  document.getElementById('inv-e-buy-date').value = today();
+}
+
+function editInventoryItem(id) {
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  navigate('inv-entry');
+  setTimeout(() => {
+    document.getElementById('inv-e-company').value = item.company;
+    document.getElementById('inv-e-kind').value = item.kind;
+    document.getElementById('inv-e-name').value = item.name;
+    document.getElementById('inv-e-supplier').value = item.supplier || '';
+    document.getElementById('inv-e-buy-date').value = item.buyDate || '';
+    document.getElementById('inv-e-buy-price').value = item.buyPrice || '';
+    document.getElementById('inv-e-buyer').value = item.buyer || '';
+    document.getElementById('inv-e-sell-date').value = item.sellDate || '';
+    document.getElementById('inv-e-sell-price').value = item.sellPrice || '';
+    document.getElementById('inv-e-fee').value = item.fee || '';
+    document.getElementById('inv-e-invoice').value = item.invoice || '';
+    // Replace save to update
+    window._editingInvId = id;
+  }, 100);
+}
+
+function deleteInventoryItem(id) {
+  if (!confirm('この在庫を削除しますか？')) return;
+  inventory = inventory.filter(i => i.id !== id);
+  saveInventory_data(inventory);
+  renderInventory();
+  renderHoldingList();
+  document.getElementById('inv-count').textContent = inventory.length;
+  showToast('削除しました');
+}
+
+// ====== FINANCIAL STATEMENTS (PLBS) ======
+const FS_KEY = 'twg_financials_v2';
+
+function loadFS() {
+  try { return JSON.parse(localStorage.getItem(FS_KEY)) || []; } catch { return []; }
+}
+function saveFS(d) { localStorage.setItem(FS_KEY, JSON.stringify(d)); autoSyncAfterWrite(); }
+
+let financialStatements = loadFS();
+
+function renderPLBS() {
+  const view = document.getElementById('plbs-view')?.value || 'current';
+  const coFilter = document.getElementById('plbs-co-select')?.value || 'all';
+
+  document.getElementById('plbs-current-section').style.display = view === 'current' ? 'block' : 'none';
+  document.getElementById('plbs-history-section').style.display = view === 'history' ? 'block' : 'none';
+  document.getElementById('plbs-compare-section').style.display = view === 'compare' ? 'block' : 'none';
+
+  if (view === 'current') renderPLBSCurrent();
+  else if (view === 'history') renderPLBSHistory(coFilter);
+  else if (view === 'compare') renderPLBSCompare();
+}
+
+function renderPLBSCurrent() {
+  const sold = inventory.filter(i => i.sellDate);
+  const sales = sold.reduce((s,i) => s+(i.sellPrice||0), 0);
+  const cogs  = sold.reduce((s,i) => s+(i.buyPrice||0), 0);
+  const fees  = sold.reduce((s,i) => s+(i.fee||0), 0);
+  const gross = sales - cogs - fees;
+  const txOpex = transactions.filter(t=>t.type==='out'&&t.category==='opex').reduce((s,t)=>s+t.amount*10000,0);
+  const opInc = gross - txOpex;
+  const holdVal = inventory.filter(i=>!i.sellDate).reduce((s,i)=>s+(i.buyPrice||0),0);
+  const txBorrow = transactions.filter(t=>t.category==='borrow'&&t.type==='in').reduce((s,t)=>s+t.amount*10000,0);
+  const txRepay  = transactions.filter(t=>t.category==='repay'&&t.type==='out').reduce((s,t)=>s+t.amount*10000,0);
+  const netDebt  = Math.max(0, txBorrow - txRepay);
+  const cashBase = Object.values(accounts).reduce((s,v)=>s+(typeof v==='number'?v:0),0)*10000;
+
+  document.getElementById('plbs-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">売上高（累計）</div><div class="metric-value v-pos">${fmtM(sales)}</div><div class="metric-sub">在庫売却分</div></div>
+    <div class="metric"><div class="metric-label">粗利益</div><div class="metric-value ${gross>=0?'v-pos':'v-neg'}">${fmtM(gross)}</div><div class="metric-sub">粗利率 ${sales?Math.round(gross/sales*100):0}%</div></div>
+    <div class="metric accent"><div class="metric-label">営業利益</div><div class="metric-value ${opInc>=0?'v-pos':'v-neg'}">${fmtM(opInc)}</div></div>
+    <div class="metric"><div class="metric-label">在庫評価額</div><div class="metric-value">${fmtM(holdVal)}</div><div class="metric-sub">未売却</div></div>
+  `;
+
+  document.getElementById('plbs-pl-body').innerHTML = `
+    <div class="plbs-row"><span>売上高</span><span class="plbs-val v-pos">${fmtM(sales)}</span></div>
+    <div class="plbs-row indent"><span>売上原価</span><span class="plbs-val v-neg">-${fmtM(cogs)}</span></div>
+    <div class="plbs-row indent"><span>手数料</span><span class="plbs-val v-neg">-${fmtM(fees)}</span></div>
+    <div class="plbs-row subtotal"><span>粗利益</span><span class="plbs-val ${gross>=0?'v-pos':'v-neg'}">${fmtM(gross)}</span></div>
+    <div class="plbs-row indent"><span>販管費</span><span class="plbs-val v-neg">-${fmtM(txOpex)}</span></div>
+    <div class="plbs-row total"><span>営業利益</span><span class="plbs-val ${opInc>=0?'v-pos':'v-neg'}">${fmtM(opInc)}</span></div>
+    <div style="padding:8px 16px;font-size:10px;color:var(--muted)">※在庫テーブルの売却済データから集計</div>
+  `;
+
+  const totalA = cashBase + holdVal;
+  const netA = totalA - netDebt;
+  document.getElementById('plbs-bs-body').innerHTML = `
+    <div class="plbs-head">資産の部</div>
+    <div class="plbs-row indent"><span>現金・預金</span><span class="plbs-val">${fmtM(cashBase)}</span></div>
+    <div class="plbs-row indent"><span>在庫（棚卸資産）</span><span class="plbs-val">${fmtM(holdVal)}</span></div>
+    <div class="plbs-row subtotal"><span>資産合計</span><span class="plbs-val">${fmtM(totalA)}</span></div>
+    <div class="plbs-head">負債・純資産の部</div>
+    <div class="plbs-row indent"><span>借入金（推計）</span><span class="plbs-val v-neg">-${fmtM(netDebt)}</span></div>
+    <div class="plbs-row total"><span>純資産</span><span class="plbs-val v-pos">${fmtM(netA)}</span></div>
+  `;
+
+  const kinds = ['アート','中古車','その他'];
+  document.getElementById('plbs-inv-summary').innerHTML = kinds.map(k => {
+    const items = inventory.filter(i=>i.kind===k);
+    const hold = items.filter(i=>!i.sellDate).reduce((s,i)=>s+(i.buyPrice||0),0);
+    const soldV = items.filter(i=>i.sellDate).reduce((s,i)=>s+(i.sellPrice||0),0);
+    const gpV = items.filter(i=>i.sellDate).reduce((s,i)=>s+(gp(i)||0),0);
+    return `<div class="plbs-row"><span>${kindTag(k)}</span><span style="font-size:11px;color:var(--muted)">在庫: ${fmtM(hold)}</span><span style="font-size:11px;color:var(--muted)">売上: ${fmtM(soldV)}</span><span class="plbs-val ${gpV>=0?'v-pos':'v-neg'}">${gpV>=0?'+':''}${fmtM(gpV)}</span></div>`;
+  }).join('');
+}
+
+function renderPLBSHistory(coFilter) {
+  const list = financialStatements.filter(f => coFilter === 'all' || f.company === coFilter)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  const tabs = [...new Set(list.map(f => f.company))];
+  document.getElementById('plbs-history-tabs').innerHTML = ['all',...['techno','bushi','mira'].filter(c=>financialStatements.some(f=>f.company===c))].map(c => {
+    const labels = {all:'全社',techno:'Techno',bushi:'Bushi',mira:'Mira'};
+    return `<button class="month-tab ${(coFilter||'all')===c?'active':''}" onclick="document.getElementById('plbs-co-select').value='${c}';renderPLBS()">${labels[c]||c}</button>`;
+  }).join('');
+
+  if (!list.length) {
+    document.getElementById('plbs-history-content').innerHTML = '<div class="empty" style="margin-bottom:16px">決算書がまだ登録されていません。下のフォームまたは「PDF読取」ボタンから追加してください。</div>';
+    return;
+  }
+
+  const coLabels = {techno:'TechnoWealthGroup',bushi:'BushidoWorks',mira:'miracolo'};
+  document.getElementById('plbs-history-content').innerHTML = list.map(f => {
+    const gross = (f.sales||0) - (f.cogs||0);
+    const opInc = gross - (f.opex||0);
+    const totalA = (f.cash||0)+(f.ar||0)+(f.inv||0)+(f.fixed||0);
+    const netA = totalA - (f.debt||0);
+    return `<div class="card" style="margin-bottom:14px;">
+      <div class="card-head">
+        <span class="card-title">${compTag(f.company)} ${f.period||f.date||'不明'}</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${f.ai ? '<span class="ai-badge">AI読取</span>' : ''}
+          <button onclick="deleteFsEntry('${f.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕ 削除</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+        <div>
+          <div class="plbs-head">PL</div>
+          <div class="plbs-row indent"><span>売上高</span><span class="plbs-val v-pos">${fmtM(f.sales)}</span></div>
+          <div class="plbs-row indent"><span>売上原価</span><span class="plbs-val v-neg">-${fmtM(f.cogs)}</span></div>
+          <div class="plbs-row subtotal"><span>粗利益</span><span class="plbs-val ${gross>=0?'v-pos':'v-neg'}">${fmtM(gross)}</span></div>
+          <div class="plbs-row indent"><span>販管費</span><span class="plbs-val v-neg">-${fmtM(f.opex)}</span></div>
+          <div class="plbs-row total"><span>営業利益</span><span class="plbs-val ${opInc>=0?'v-pos':'v-neg'}">${fmtM(opInc)}</span></div>
+        </div>
+        <div>
+          <div class="plbs-head">BS</div>
+          <div class="plbs-row indent"><span>現金・預金</span><span class="plbs-val">${fmtM(f.cash)}</span></div>
+          <div class="plbs-row indent"><span>棚卸資産</span><span class="plbs-val">${fmtM(f.inv)}</span></div>
+          <div class="plbs-row subtotal"><span>総資産</span><span class="plbs-val">${fmtM(totalA)}</span></div>
+          <div class="plbs-row indent"><span>借入金</span><span class="plbs-val v-neg">-${fmtM(f.debt)}</span></div>
+          <div class="plbs-row total"><span>純資産</span><span class="plbs-val v-pos">${fmtM(netA)}</span></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPLBSCompare() {
+  const companies = ['techno','bushi','mira'];
+  const coLabels = {techno:'TechnoWealthGroup',bushi:'BushidoWorks',mira:'miracolo'};
+  document.getElementById('plbs-compare-content').innerHTML = companies.map(co => {
+    const list = financialStatements.filter(f=>f.company===co).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    if (!list.length) return '';
+    const headers = list.map(f=>`<th style="text-align:right">${f.period||f.date||'?'}</th>`).join('');
+    const row = (label, key, neg=false) => {
+      const vals = list.map(f => {
+        const v = f[key]||0;
+        const color = v===0?'var(--muted)':neg?'var(--out)':'var(--text)';
+        return `<td class="num" style="color:${color}">${neg&&v?'-':''}${fmtM(v)}</td>`;
+      }).join('');
+      return `<tr><td style="color:var(--muted);font-size:12px">${label}</td>${vals}</tr>`;
+    };
+    return `<div class="card" style="margin-bottom:14px;">
+      <div class="card-head"><span class="card-title">${compTag(co)} 期別比較</span></div>
+      <div style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>項目</th>${headers}</tr></thead>
+        <tbody>
+          ${row('売上高','sales')}
+          ${row('売上原価','cogs',true)}
+          ${row('粗利益','gross')}
+          ${row('販管費','opex',true)}
+          ${row('営業利益','opInc')}
+          <tr><td colspan="${list.length+1}" style="padding:4px 12px;background:var(--bg2);font-size:10px;color:var(--muted)">BS</td></tr>
+          ${row('現金・預金','cash')}
+          ${row('借入金','debt',true)}
+          ${row('純資産','netA')}
+        </tbody>
+      </table></div>
+    </div>`;
+  }).filter(Boolean).join('') || '<div class="empty">複数期の決算書を登録すると比較表が表示されます</div>';
+}
+
+// FS Entry form
+function saveFsEntry() {
+  const period = document.getElementById('fs-period').value.trim();
+  const company = document.getElementById('fs-company').value;
+  if (!period) { showToast('決算期を入力してください', false); return; }
+  const f = buildFsEntry(company, period, false);
+  financialStatements.push(f);
+  saveFS(financialStatements);
+  clearFsForm();
+  showToast('✓ 決算書を保存しました');
+  renderPLBS();
+}
+
+function buildFsEntry(company, period, ai=false) {
+  const sales = +document.getElementById('fs-sales').value||0;
+  const cogs  = +document.getElementById('fs-cogs').value||0;
+  const opex  = +document.getElementById('fs-opex').value||0;
+  const gross = sales - cogs;
+  const opInc = gross - opex;
+  const cash  = +document.getElementById('fs-cash').value||0;
+  const ar    = +document.getElementById('fs-ar').value||0;
+  const inv   = +document.getElementById('fs-inv').value||0;
+  const fixed = +document.getElementById('fs-fixed').value||0;
+  const debt  = +document.getElementById('fs-debt').value||0;
+  const capital = +document.getElementById('fs-capital').value||0;
+  const retained = +document.getElementById('fs-retained').value||0;
+  const totalA = cash+ar+inv+fixed;
+  const netA = totalA - debt;
+  return {
+    id: Date.now().toString(),
+    company, period, ai,
+    date: document.getElementById('fs-date').value||'',
+    sales, cogs, opex, otherIn: +document.getElementById('fs-other-in').value||0,
+    otherOut: +document.getElementById('fs-other-out').value||0,
+    tax: +document.getElementById('fs-tax').value||0,
+    gross, opInc,
+    cash, ar, inv, fixed, debt, capital, retained,
+    totalA, netA
+  };
+}
+
+function clearFsForm() {
+  ['fs-period','fs-date','fs-sales','fs-cogs','fs-opex','fs-other-in','fs-other-out','fs-tax',
+   'fs-cash','fs-ar','fs-inv','fs-fixed','fs-ap','fs-debt','fs-capital','fs-retained']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function deleteFsEntry(id) {
+  if (!confirm('この決算書を削除しますか？')) return;
+  financialStatements = financialStatements.filter(f => f.id !== id);
+  saveFS(financialStatements);
+  renderPLBS();
+  showToast('削除しました');
+}
+
+// PDF決算書読取
+const PDF_KEY_STORE = 'twg_pdf_api_key';
+function openFsUpload() { document.getElementById('fs-upload-modal').style.display='flex'; }
+function closeFsUpload() { document.getElementById('fs-upload-modal').style.display='none'; resetFsUpload(); }
+
+function pdfDragOver2(e) { e.preventDefault(); document.getElementById('fs-drop-zone').classList.add('drag-over'); }
+function pdfDragLeave2(e) { document.getElementById('fs-drop-zone').classList.remove('drag-over'); }
+function pdfDrop2(e) { e.preventDefault(); document.getElementById('fs-drop-zone').classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) processFsPdf(f); }
+function fsPdfSelect(e) { const f=e.target.files[0]; if(f) processFsPdf(f); }
+
+async function processFsPdf(file) {
+  const key = localStorage.getItem(PDF_KEY_STORE);
+  if (!key) { showToast('先にPDF読取ページでAPIキーを設定してください', false); return; }
+  document.getElementById('fs-analyzing').style.display='flex';
+  document.getElementById('fs-drop-zone').style.display='none';
+  document.getElementById('fs-upload-result').style.display='none';
+  try {
+    const base64 = await fileToBase64(file);
+    const isImage = file.type.startsWith('image/');
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-5', max_tokens:2000,
+        messages:[{role:'user', content:[
+          {type: isImage?'image':'document', source:{type:'base64', media_type: isImage?file.type:'application/pdf', data:base64}},
+          {type:'text', text:`この決算書（PL・BS）を解析してください。以下のJSON形式のみで返してください。マークダウン不要。
+
+{
+  "period": "決算期（例: 2024年8月期）",
+  "date": "決算日（YYYY-MM-DD）",
+  "sales": 売上高（円・数値）,
+  "cogs": 売上原価（円・数値）,
+  "opex": 販売管理費（円・数値）,
+  "other_income": 営業外収益（円・数値）,
+  "other_expense": 営業外費用（円・数値）,
+  "tax": 法人税等（円・数値）,
+  "cash": 現金・預金（円・数値）,
+  "ar": 売掛金（円・数値）,
+  "inventory": 棚卸資産（円・数値）,
+  "fixed_assets": 固定資産（円・数値）,
+  "ap": 買掛金（円・数値）,
+  "debt": 借入金（円・数値）,
+  "capital": 資本金（円・数値）,
+  "retained": 繰越利益剰余金（円・数値）
+}`}
+        ]}]
+      })
+    });
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'API Error'); }
+    const data = await res.json();
+    const text = data.content[0].text;
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    // Fill result form
+    const map = {
+      'fs-r-period': parsed.period, 'fs-r-date': parsed.date,
+      'fs-r-sales': parsed.sales, 'fs-r-cogs': parsed.cogs, 'fs-r-opex': parsed.opex, 'fs-r-tax': parsed.tax,
+      'fs-r-cash': parsed.cash, 'fs-r-ar': parsed.ar, 'fs-r-inv': parsed.inventory,
+      'fs-r-fixed': parsed.fixed_assets, 'fs-r-debt': parsed.debt, 'fs-r-capital': parsed.capital
+    };
+    for (const [id,val] of Object.entries(map)) { const el=document.getElementById(id); if(el&&val!==undefined) el.value=val||''; }
+    document.getElementById('fs-analyzing').style.display='none';
+    document.getElementById('fs-upload-result').style.display='block';
+    showToast('✓ 決算書を読み取りました。内容を確認してください');
+  } catch(e) {
+    document.getElementById('fs-analyzing').style.display='none';
+    document.getElementById('fs-drop-zone').style.display='block';
+    showToast('⚠ 読取失敗: '+e.message, false);
+  }
+}
+
+function saveFsFromUpload() {
+  const company = document.getElementById('fs-upload-company').value;
+  const period = document.getElementById('fs-r-period').value.trim();
+  if (!period) { showToast('決算期を確認してください', false); return; }
+  const sales = +document.getElementById('fs-r-sales').value||0;
+  const cogs  = +document.getElementById('fs-r-cogs').value||0;
+  const opex  = +document.getElementById('fs-r-opex').value||0;
+  const gross = sales-cogs; const opInc = gross-opex;
+  const cash  = +document.getElementById('fs-r-cash').value||0;
+  const ar    = +document.getElementById('fs-r-ar').value||0;
+  const inv   = +document.getElementById('fs-r-inv').value||0;
+  const fixed = +document.getElementById('fs-r-fixed').value||0;
+  const debt  = +document.getElementById('fs-r-debt').value||0;
+  const capital = +document.getElementById('fs-r-capital').value||0;
+  const totalA = cash+ar+inv+fixed;
+  const netA = totalA-debt;
+  financialStatements.push({
+    id: Date.now().toString(), company, period, ai: true,
+    date: document.getElementById('fs-r-date').value||'',
+    sales, cogs, opex, gross, opInc,
+    cash, ar, inv, fixed, debt, capital, totalA, netA
+  });
+  saveFS(financialStatements);
+  closeFsUpload();
+  showToast('✓ 決算書を保存しました');
+  document.getElementById('plbs-view').value='history';
+  renderPLBS();
+}
+
+function resetFsUpload() {
+  document.getElementById('fs-drop-zone').style.display='block';
+  document.getElementById('fs-analyzing').style.display='none';
+  document.getElementById('fs-upload-result').style.display='none';
+  document.getElementById('fs-pdf-input').value='';
+}
+
+// Legacy compat
+function savePrevFinancials() { saveFsEntry(); }
+function loadPrevFinancialsToForm() {}
+function renderPLBSInvSummary() {}
+
+
+
+// ====== PDF READER ======
+
+function renderPdfReader() {
+  const key = localStorage.getItem(PDF_KEY_STORE) || '';
+  const keyInput = document.getElementById('pdf-api-key');
+  if (keyInput && key) {
+    keyInput.value = key;
+    document.getElementById('pdf-key-status').textContent = '✓ APIキー設定済み';
+    document.getElementById('pdf-key-status').style.color = 'var(--in)';
+  }
+}
+
+function savePdfApiKey() {
+  const key = document.getElementById('pdf-api-key').value.trim();
+  if (!key || !key.startsWith('sk-ant-')) {
+    document.getElementById('pdf-key-status').textContent = '⚠ sk-ant- で始まるキーを入力してください';
+    document.getElementById('pdf-key-status').style.color = 'var(--out)';
+    return;
+  }
+  localStorage.setItem(PDF_KEY_STORE, key);
+  document.getElementById('pdf-key-status').textContent = '✓ 保存しました';
+  document.getElementById('pdf-key-status').style.color = 'var(--in)';
+  showToast('✓ APIキーを保存しました');
+}
+
+function pdfDragOver(e) { e.preventDefault(); document.getElementById('pdf-drop-zone').classList.add('drag-over'); }
+function pdfDragLeave(e) { document.getElementById('pdf-drop-zone').classList.remove('drag-over'); }
+function pdfDrop(e) {
+  e.preventDefault();
+  document.getElementById('pdf-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processPdfFile(file);
+}
+function pdfFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processPdfFile(file);
+}
+
+async function processPdfFile(file) {
+  const key = localStorage.getItem(PDF_KEY_STORE);
+  if (!key) { showToast('先にAPIキーを設定してください', false); return; }
+
+  document.getElementById('pdf-analyzing').style.display = 'flex';
+  document.getElementById('pdf-result-section').style.display = 'none';
+  document.getElementById('pdf-drop-zone').style.display = 'none';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const isImage = file.type.startsWith('image/');
+    const mediaType = isImage ? file.type : 'application/pdf';
+
+    const content = [
+      {
+        type: isImage ? 'image' : 'document',
+        source: { type: 'base64', media_type: mediaType, data: base64 }
+      },
+      {
+        type: 'text',
+        text: `この書類を解析して以下の情報をJSON形式で返してください。必ずJSONのみ返し、マークダウンや説明文は不要です。
+
+{
+  "document_type": "書類種別（請求書/領収書/振込明細/決算書/その他）",
+  "date": "日付（YYYY-MM-DD形式）",
+  "amount_yen": 金額（数値、円単位、税込合計）,
+  "amount_man": 金額（万円単位、小数点2桁）,
+  "counterparty": "取引先名",
+  "description": "内容・品目の簡潔な説明",
+  "tx_type": "in または out（入金=in, 出金・支払い=out）",
+  "suggested_category": "sales_car または sales_art または sales_consulting または sales_other または cogs または opex または borrow または repay または other",
+  "memo": "メモとして使える簡潔な説明（取引先＋内容）",
+  "notes": "その他特記事項"
+}`
+      }
+    ];
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API エラー: ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.content[0].text;
+
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error('AIの応答を解析できませんでした');
+    }
+
+    // Fill form
+    document.getElementById('pdf-e-date').value = parsed.date || today();
+    document.getElementById('pdf-e-type').value = parsed.tx_type === 'in' ? 'in' : 'out';
+    document.getElementById('pdf-e-amount').value = parsed.amount_man || (parsed.amount_yen ? (parsed.amount_yen / 10000).toFixed(2) : '');
+    document.getElementById('pdf-e-category').value = parsed.suggested_category || 'other';
+    document.getElementById('pdf-e-memo').value = parsed.memo || (parsed.counterparty + ' ' + parsed.description);
+
+    // Show result
+    document.getElementById('pdf-raw-result').textContent =
+      `書類種別: ${parsed.document_type || '不明'}\n` +
+      `日付: ${parsed.date || '不明'}\n` +
+      `金額: ¥${(parsed.amount_yen || 0).toLocaleString()}（${parsed.amount_man || '?'}万円）\n` +
+      `取引先: ${parsed.counterparty || '不明'}\n` +
+      `内容: ${parsed.description || '不明'}\n` +
+      `区分: ${parsed.tx_type === 'in' ? '入金（IN）' : '出金（OUT）'}\n` +
+      (parsed.notes ? `備考: ${parsed.notes}` : '');
+
+    document.getElementById('pdf-analyzing').style.display = 'none';
+    document.getElementById('pdf-result-section').style.display = 'block';
+    showToast('✓ 解析完了！内容を確認して登録してください');
+
+  } catch (e) {
+    document.getElementById('pdf-analyzing').style.display = 'none';
+    document.getElementById('pdf-drop-zone').style.display = 'block';
+    showToast('⚠ 解析失敗: ' + e.message, false);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('ファイル読み込みエラー'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function registerPdfTx() {
+  const amount = parseFloat(document.getElementById('pdf-e-amount').value);
+  if (!amount || amount <= 0) { showToast('金額を確認してください', false); return; }
+  transactions.push({
+    id: Date.now(),
+    date: document.getElementById('pdf-e-date').value || today(),
+    company: document.getElementById('pdf-e-company').value,
+    type: document.getElementById('pdf-e-type').value,
+    category: document.getElementById('pdf-e-category').value,
+    amount: amount,
+    account: document.getElementById('pdf-e-account').value,
+    memo: document.getElementById('pdf-e-memo').value,
+    source: 'pdf'
+  });
+  saveData(transactions);
+  document.getElementById('cf-count').textContent = transactions.length;
+  showToast('✓ 取引を登録しました');
+  resetPdfReader();
+}
+
+function resetPdfReader() {
+  document.getElementById('pdf-result-section').style.display = 'none';
+  document.getElementById('pdf-drop-zone').style.display = 'block';
+  document.getElementById('pdf-analyzing').style.display = 'none';
+  document.getElementById('pdf-file-input').value = '';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ====== JSONBIN CLOUD SYNC ======
+const SYNC_KEY = 'twg_sync_settings';
+
+function loadSyncSettings() {
+  try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch { return {}; }
+}
+function saveSyncSettings_store(s) { localStorage.setItem(SYNC_KEY, JSON.stringify(s)); }
+
+let syncSettings = loadSyncSettings();
+
+function updateSyncStatus(connected, lastSync) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  const last = document.getElementById('sync-last');
+  if (connected) {
+    dot.style.background = '#4ade80';
+    label.textContent = '☁ 同期中';
+  } else {
+    dot.style.background = syncSettings.apiKey ? '#fb923c' : 'var(--muted2)';
+    label.textContent = syncSettings.apiKey ? '☁ 未同期' : '☁ クラウド同期';
+  }
+  if (lastSync) last.textContent = '最終: ' + lastSync;
+}
+
+function openSyncModal() {
+  const s = loadSyncSettings();
+  document.getElementById('jb-api-key').value = s.apiKey || '';
+  document.getElementById('jb-bin-id').value = s.binId || '';
+  document.getElementById('sync-modal').style.display = 'flex';
+  document.getElementById('sync-test-result').textContent = '';
+}
+function closeSyncModal() {
+  document.getElementById('sync-modal').style.display = 'none';
+}
+
+function saveSyncSettings() {
+  const apiKey = document.getElementById('jb-api-key').value.trim();
+  const binId  = document.getElementById('jb-bin-id').value.trim();
+  if (!apiKey) { showToast('APIキーを入力してください'); return; }
+  syncSettings = { apiKey, binId };
+  saveSyncSettings_store(syncSettings);
+  showToast('✓ 設定を保存しました');
+  updateSyncStatus(false);
+}
+
+function allData() {
+  return { transactions, accounts, inventory, prevFinancials, _v: Date.now() };
+}
+
+async function syncPush() {
+  const s = loadSyncSettings();
+  if (!s.apiKey) { showToast('先にAPIキーを設定してください'); openSyncModal(); return; }
+  showToast('↑ アップロード中...');
+  const authHeaders = { 'X-Master-Key': s.apiKey, 'X-Access-Key': s.apiKey };
+  try {
+    const body = JSON.stringify(allData());
+    let res, data;
+    if (s.binId) {
+      res = await fetch(`https://api.jsonbin.io/v3/b/${s.binId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body
+      });
+    } else {
+      res = await fetch('https://api.jsonbin.io/v3/b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders, 'X-Bin-Name': 'TWG Finance', 'X-Bin-Private': 'true' },
+        body
+      });
+    }
+    data = await res.json();
+    if (!res.ok) throw new Error(data.message || ('HTTP ' + res.status));
+    if (!s.binId && data.metadata?.id) {
+      syncSettings.binId = data.metadata.id;
+      saveSyncSettings_store(syncSettings);
+      document.getElementById('jb-bin-id').value = syncSettings.binId;
+    }
+    const now = new Date().toLocaleTimeString('ja-JP');
+    updateSyncStatus(true, now);
+    showToast('✓ クラウドに保存しました');
+  } catch(e) {
+    updateSyncStatus(false);
+    showToast('⚠ 保存失敗: ' + e.message);
+  }
+}
+
+async function syncPull() {
+  const s = loadSyncSettings();
+  if (!s.apiKey || !s.binId) { showToast('APIキーとBin IDが必要です'); openSyncModal(); return; }
+  showToast('↓ データ取得中...');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${s.binId}/latest`, {
+      headers: { 'X-Master-Key': s.apiKey, 'X-Access-Key': s.apiKey }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || res.status);
+    const d = data.record;
+    if (d.transactions) { transactions = d.transactions; saveData(transactions); }
+    if (d.accounts)     { accounts = d.accounts; saveAccounts(accounts); }
+    if (d.inventory)    { inventory = d.inventory; saveInventory_data(inventory); }
+    if (d.prevFinancials) { prevFinancials = d.prevFinancials; savePrevFinancials_data(prevFinancials); }
+    const now = new Date().toLocaleTimeString('ja-JP');
+    updateSyncStatus(true, now);
+    showToast('✓ データを取得しました');
+    if (currentPage === 'dashboard') renderDashboard();
+    else navigate(currentPage);
+  } catch(e) {
+    updateSyncStatus(false);
+    showToast('⚠ 取得失敗: ' + e.message);
+  }
+}
+
+async function testSyncConnection() {
+  const apiKey = document.getElementById('jb-api-key').value.trim();
+  const binId  = document.getElementById('jb-bin-id').value.trim();
+  const result = document.getElementById('sync-test-result');
+  if (!apiKey) { result.textContent = '⚠ APIキーを入力してください'; result.style.color = 'var(--out)'; return; }
+  result.textContent = '接続テスト中...'; result.style.color = 'var(--muted)';
+  const authHeaders = { 'X-Master-Key': apiKey, 'X-Access-Key': apiKey };
+  try {
+    const url = binId
+      ? `https://api.jsonbin.io/v3/b/${binId}/latest`
+      : 'https://api.jsonbin.io/v3/b?page=1';
+    const res = await fetch(url, { headers: authHeaders });
+    const d = await res.json();
+    if (res.ok) {
+      result.textContent = '✓ 接続成功！APIキーは有効です'; result.style.color = 'var(--in)';
+    } else {
+      result.textContent = '⚠ 失敗: ' + (d.message || ('HTTP ' + res.status));
+      result.style.color = 'var(--out)';
+    }
+  } catch(e) {
+    result.textContent = '⚠ ネットワークエラー: ' + e.message;
+    result.style.color = 'var(--out)';
+  }
+}
+
+function autoSyncAfterWrite() {
+  if (syncSettings.apiKey && syncSettings.binId) syncPush();
+}
+
+// Auto-pull on load if configured
+if (syncSettings.apiKey && syncSettings.binId) {
+  updateSyncStatus(false, '');
+  setTimeout(() => syncPull(), 500);
+}
+document.getElementById('today-label').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric', weekday:'short'});
+document.getElementById('inv-count').textContent = inventory.length;
+renderDashboard();
+</script>
+</body>
+</html>
